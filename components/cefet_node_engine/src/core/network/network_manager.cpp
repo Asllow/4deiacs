@@ -2,12 +2,21 @@
 #include "cefet_node_engine.h"
 #include "esp_wifi.h"
 #include "esp_log.h"
+#include "esp_mac.h"
 #include "nvs_flash.h"
+#include "mdns.h"
 #include "sdkconfig.h"
+#include <cstdio>
+#include <cstring>
 
 namespace Cefet {
 
 static const char* TAG = "NETWORK_MANAGER";
+
+/**
+ * @brief Buffer estatico para armazenamento do identificador de rede do dispositivo.
+ */
+static char device_hostname[64] = "4deacis-node";
 
 esp_err_t NetworkManager::connect()
 {
@@ -18,25 +27,46 @@ esp_err_t NetworkManager::connect()
     }
     ESP_ERROR_CHECK(ret);
 
+    nvs_handle_t nvs_handle;
+    if (nvs_open("4deacis", NVS_READONLY, &nvs_handle) == ESP_OK) {
+        size_t len = sizeof(device_hostname);
+        if (nvs_get_str(nvs_handle, "deviceName", device_hostname, &len) != ESP_OK) {
+            ESP_LOGW(TAG, "deviceName nao encontrado na NVS. Usando padrao: %s", device_hostname);
+        }
+        nvs_close(nvs_handle);
+    }
+
     ESP_ERROR_CHECK(esp_netif_init());
-    esp_netif_create_default_wifi_sta();
+    esp_netif_t* netif = esp_netif_create_default_wifi_sta();
+    
+    esp_netif_set_hostname(netif, device_hostname);
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &NetworkManager::wifiEventHandler, nullptr, nullptr);
-    esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &NetworkManager::wifiEventHandler, nullptr, nullptr);
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, 
+                                                        ESP_EVENT_ANY_ID, 
+                                                        &NetworkManager::wifiEventHandler, 
+                                                        nullptr, 
+                                                        nullptr));
+                                                        
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, 
+                                                        IP_EVENT_STA_GOT_IP, 
+                                                        &NetworkManager::wifiEventHandler, 
+                                                        nullptr, 
+                                                        nullptr));
 
     wifi_config_t wifi_config = {};
-    snprintf(reinterpret_cast<char*>(wifi_config.sta.ssid), sizeof(wifi_config.sta.ssid), "%s", CONFIG_CEFET_WIFI_SSID);
-    snprintf(reinterpret_cast<char*>(wifi_config.sta.password), sizeof(wifi_config.sta.password), "%s", CONFIG_CEFET_WIFI_PASS);
+    std::strncpy(reinterpret_cast<char*>(wifi_config.sta.ssid), CONFIG_CEFET_WIFI_SSID, sizeof(wifi_config.sta.ssid));
+    std::strncpy(reinterpret_cast<char*>(wifi_config.sta.password), CONFIG_CEFET_WIFI_PASS, sizeof(wifi_config.sta.password));
     wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "Inicializacao Wi-Fi concluida. Conectando a %s...", CONFIG_CEFET_WIFI_SSID);
+    ESP_LOGI(TAG, "Subsistema Wi-Fi iniciado. Hostname alvo: %s", device_hostname);
+    
     return ESP_OK;
 }
 
@@ -46,15 +76,31 @@ void NetworkManager::wifiEventHandler(void* arg, esp_event_base_t event_base, in
         esp_wifi_connect();
     } 
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        ESP_LOGW(TAG, "Conexao perdida. Tentando reconectar...");
+        ESP_LOGW(TAG, "Conexao Wi-Fi perdida. Tentando reconectar...");
         esp_wifi_connect();
     } 
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         auto* event = static_cast<ip_event_got_ip_t*>(event_data);
-        ESP_LOGI(TAG, "IP Obtido com sucesso: " IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGI(TAG, "IP atribuido: " IPSTR, IP2STR(&event->ip_info.ip));
         
-        // Dispara o evento de rede pronta para o nosso motor IEC 61499
-        // CefetEngine::postEvent(EV_NETWORK_RX); // Será usado quando o MQTT estiver rodando
+        if (mdns_init() == ESP_OK) {
+            mdns_hostname_set(device_hostname);
+            mdns_instance_name_set(device_hostname);
+            mdns_service_add(nullptr, "_http", "_tcp", 80, nullptr, 0);
+
+            uint8_t mac[6];
+            esp_wifi_get_mac(WIFI_IF_STA, mac);
+            char mac_str[18];
+            std::snprintf(mac_str, sizeof(mac_str), "%02X:%02X:%02X:%02X:%02X:%02X", 
+                        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+            
+            mdns_service_txt_item_set("_http", "_tcp", "mac", mac_str);
+            mdns_service_txt_item_set("_http", "_tcp", "board", CONFIG_IDF_TARGET);
+            
+            ESP_LOGI(TAG, "mDNS anunciado como: %s.local", device_hostname);
+        } else {
+            ESP_LOGE(TAG, "Erro ao inicializar mDNS. Descoberta de rede comprometida.");
+        }
     }
 }
 

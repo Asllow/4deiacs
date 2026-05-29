@@ -2,6 +2,7 @@
 #include "freertos/task.h"
 #include "cefet_node_engine.h"
 #include "network_manager.h"
+#include "api_server.h"
 #include "esp_heap_caps.h"
 #include "esp_flash.h"
 #include "esp_log.h"
@@ -15,14 +16,14 @@ extern "C" void app_main(void)
     ESP_LOGI("MEMORIA", "RAM Interna Livre: %zu bytes", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
     ESP_LOGI("MEMORIA", "PSRAM Externa Livre: %zu bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
     ESP_LOGI("MEMORIA", "=============================");
-    // 1. Inicializa a infraestrutura base (Eventos e Pilha TCP/IP)
+
     Cefet::CefetEngine::start();
     Cefet::NetworkManager::connect();
+    
+    Cefet::ApiServer::start();
 
-    // 2. Transfere o controle para o Motor carregar a Planta Fisica
     Cefet::CefetEngine::startFromManifest("/spiffs/config.json");
 
-    // 3. O FreeRTOS mantem a placa viva enquanto os eventos acontecem em background
     while (1) {
         vTaskDelay(portMAX_DELAY);
     }

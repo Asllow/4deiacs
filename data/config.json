@@ -4,7 +4,7 @@
     { "id": "CLOCK", "type": "ECycle", "config": { "period_ms": 54 } },
     { "id": "SENSOR_EC11", "type": "EncoderInput", "config": { "gpio_a": 16, "gpio_b": 17, "ppr": 10000, "high_limit": 10000, "low_limit": -10000 } },
     { "id": "PID_LUA", "type": "Sandbox", "config": { "num_in": 1, "num_out": 1, "script_b64": "ZnVuY3Rpb24gdGljayhpbjApCiAgaWYgaW5pdCA9PSBuaWwgdGhlbgogICAgaW5pdCA9IHRydWUKICAgIGVhID0gMC4wCiAgICB1aWEgPSAwLjAKICAgIHJlZiA9IDAuOTYKICAgIHUwID0gNC44CiAgICBrcCA9IDIuMDg1OAogICAga2kgPSA0LjUwMDUKICAgIGtkID0gMC4xMDM4CiAgICBUcyA9IDAuMDU0CiAgZW5kCiAgbG9jYWwgYW5nbGUgPSBpbjAgb3IgMC4wCiAgbG9jYWwgZSA9IHJlZiAtIGFuZ2xlCiAgbG9jYWwgZHVpYSA9IGtpICogVHMgKiBlCiAgbG9jYWwgdWQgPSAoZSAtIGVhKSAqIChrZCAvIFRzKQogIGxvY2FsIHUgPSAoa3AgKiBlKSArIHVkICsgdWlhICsgdTAKICBlYSA9IGUKICBpZiB1ID4gMTIuMCB0aGVuIHUgPSAxMi4wIGVsc2VpZiB1IDwgMC4wIHRoZW4gdSA9IDAuMCBlbHNlIHVpYSA9IHVpYSArIGR1aWEgZW5kCiAgcmV0dXJuICh1IC8gMTIuMCkgKiAxMDAuMAplbmQ=" } },
-    { "id": "REDE_OUT", "type": "UdpPublisher", "config": { "target_ip": "192.168.137.61", "target_port": 5000 } },
+    { "id": "REDE_OUT", "type": "UdpPublisher", "config": { "target_ip": "192.168.137.200", "target_port": 5000 } },
     { "id": "MONITOR", "type": "SerialMonitor", "config": { "num_in": 2 } }
   ],
   "connections": [

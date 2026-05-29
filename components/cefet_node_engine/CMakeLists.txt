@@ -1,6 +1,7 @@
 idf_component_register(
     SRCS "src/core/cefet_node_engine.cpp"
         "src/core/network/network_manager.cpp"
+        "src/core/network/api_server.cpp"
         "src/core/management/block_registry.cpp"
         "src/core/management/json_parser.cpp"
         "src/core/management/spiffs_manager.cpp"
@@ -17,9 +18,9 @@ idf_component_register(
         "src/blocks/math/math_node_block.cpp"
         "src/blocks/math/state_space_block.cpp"
         "src/blocks/math/sandbox_block.cpp"
-        src/blocks/io/encoder_input_block.cpp
-        src/blocks/network/udp_subscriber_block.cpp
-        src/blocks/network/mqtt_subscriber_block.cpp
+        "src/blocks/io/encoder_input_block.cpp"
+        "src/blocks/network/udp_subscriber_block.cpp"
+        "src/blocks/network/mqtt_subscriber_block.cpp"
         "src/blocks/network/modbus_tcp_client_block.cpp"
     INCLUDE_DIRS "include"
                 "include/core"
@@ -29,7 +30,23 @@ idf_component_register(
                 "include/blocks/network"
                 "include/blocks/timers"
                 "include/blocks/math"
-    REQUIRES esp_event esp_adc esp_timer driver esp_wifi esp_netif nvs_flash esp_driver_ledc esp_driver_mcpwm mqtt cjson spiffs lua esp_driver_pcnt
+    REQUIRES 
+        esp_event 
+        esp_adc 
+        esp_timer 
+        driver 
+        esp_wifi 
+        esp_http_server
+        esp_netif 
+        nvs_flash 
+        esp_driver_ledc 
+        esp_driver_mcpwm 
+        mqtt 
+        cjson 
+        spiffs 
+        lua 
+        esp_driver_pcnt 
+        mdns
     PRIV_REQUIRES lwip
     WHOLE_ARCHIVE
 )
