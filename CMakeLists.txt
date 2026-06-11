@@ -4,6 +4,3 @@ cmake_minimum_required(VERSION 3.22)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(cefet-61499-node)
-
-# Ordena a criacao da particao SPIFFS usando o conteudo da pasta "data"
-spiffs_create_partition_image(spiffs data FLASH_IN_PROJECT)
