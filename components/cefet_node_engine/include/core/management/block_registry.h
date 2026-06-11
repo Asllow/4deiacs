@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <functional>
+#include <vector>
 #include "i_function_block.h"
 #include "cJSON.h"
 
@@ -15,8 +16,10 @@ namespace Cefet {
 using BlockFactoryFunc = std::function<IFunctionBlock*(const std::string& block_id, cJSON* config)>;
 
 /**
- * @brief Registro Central de Blocos (Factory Method).
- * Mantem um dicionario mapeando nomes de blocos (strings) para suas funcoes construtoras.
+ * @brief Registro Central e Fabrica de Blocos.
+ * * Mantem o mapeamento de tipos de blocos para construtores e rastreia
+ * todas as instancias ativas na malha para permitir a desalocacao
+ * segura durante o processo de Hot-Deploy.
  */
 class BlockRegistry {
 public:
@@ -33,16 +36,28 @@ public:
      *
      * @param block_type O tipo do bloco solicitado pelo JSON.
      * @param block_id O ID unico (nome da instancia) deste bloco na rede.
-     * @param config O ponteiro para o pedaco do JSON que contem as configuracoes especificas dele.
-     * @return IFunctionBlock* Ponteiro para o bloco recem-criado (ou nullptr se nao existir).
+     * @param config O ponteiro para o pedaco do JSON que contem as configuracoes.
+     * @return IFunctionBlock* Ponteiro para o bloco recem-criado (ou nullptr se falhar).
      */
     static IFunctionBlock* createBlock(const std::string& block_type, const std::string& block_id, cJSON* config);
+
+    /**
+     * @brief Destroi todas as instancias de blocos ativas e limpa o rastreador.
+     * * Invoca o destrutor (delete) de cada bloco instanciado, garantindo a
+     * libertacao de memoria RAM e o desvinculo de perifericos e eventos.
+     */
+    static void clearAll();
 
 private:
     /**
      * @brief Singleton para proteger a ordem de inicializacao do dicionario em C++.
      */
     static std::unordered_map<std::string, BlockFactoryFunc>& getRegistry();
+
+    /**
+     * @brief Singleton para armazenar os ponteiros das instancias criadas na malha atual.
+     */
+    static std::vector<IFunctionBlock*>& getInstances();
 };
 
 } // namespace Cefet

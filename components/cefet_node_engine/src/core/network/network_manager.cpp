@@ -83,24 +83,31 @@ void NetworkManager::wifiEventHandler(void* arg, esp_event_base_t event_base, in
         auto* event = static_cast<ip_event_got_ip_t*>(event_data);
         ESP_LOGI(TAG, "IP atribuido: " IPSTR, IP2STR(&event->ip_info.ip));
         
-        if (mdns_init() == ESP_OK) {
-            mdns_hostname_set(device_hostname);
-            mdns_instance_name_set(device_hostname);
-            mdns_service_add(nullptr, "_http", "_tcp", 80, nullptr, 0);
+        static bool mdns_started = false;
+        
+        if (!mdns_started) {
+            if (mdns_init() == ESP_OK) {
+                mdns_started = true;
+                mdns_hostname_set(device_hostname);
+                mdns_instance_name_set(device_hostname);
+                mdns_service_add(nullptr, "_http", "_tcp", 80, nullptr, 0);
 
-            uint8_t mac[6];
-            esp_wifi_get_mac(WIFI_IF_STA, mac);
-            char mac_str[18];
-            std::snprintf(mac_str, sizeof(mac_str), "%02X:%02X:%02X:%02X:%02X:%02X", 
-                        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-            
-            mdns_service_txt_item_set("_http", "_tcp", "mac", mac_str);
-            mdns_service_txt_item_set("_http", "_tcp", "board", CONFIG_IDF_TARGET);
-            
-            ESP_LOGI(TAG, "mDNS anunciado como: %s.local", device_hostname);
-        } else {
-            ESP_LOGE(TAG, "Erro ao inicializar mDNS. Descoberta de rede comprometida.");
+                uint8_t mac[6];
+                esp_wifi_get_mac(WIFI_IF_STA, mac);
+                char mac_str[18];
+                std::snprintf(mac_str, sizeof(mac_str), "%02X:%02X:%02X:%02X:%02X:%02X", 
+                            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+                
+                mdns_service_txt_item_set("_http", "_tcp", "mac", mac_str);
+                mdns_service_txt_item_set("_http", "_tcp", "board", CONFIG_IDF_TARGET);
+                
+                ESP_LOGI(TAG, "mDNS anunciado como: %s.local", device_hostname);
+            } else {
+                ESP_LOGE(TAG, "Erro ao inicializar mDNS. Descoberta de rede comprometida.");
+            }
         }
+
+        CefetEngine::postEvent(EV_NETWORK_CONNECTED);
     }
 }
 

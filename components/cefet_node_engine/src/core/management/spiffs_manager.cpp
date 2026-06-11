@@ -1,22 +1,25 @@
 #include "spiffs_manager.h"
 #include "esp_spiffs.h"
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 #include <fstream>
 #include <sstream>
+#include <cstdio>
 
 namespace Cefet {
 
 static const char* TAG = "SPIFFS_MANAGER";
+static const char* MESH_FILE_PATH = "/spiffs/mesh.json";
 
 esp_err_t SpiffsManager::mount()
 {
     ESP_LOGI(TAG, "Inicializando SPIFFS...");
 
     esp_vfs_spiffs_conf_t conf = {
-      .base_path = "/spiffs",
-      .partition_label = NULL,
-      .max_files = 5,
-      .format_if_mount_failed = true
+        .base_path = "/spiffs",
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = true
     };
 
     esp_err_t ret = esp_vfs_spiffs_register(&conf);
@@ -64,6 +67,46 @@ std::string SpiffsManager::readFile(const std::string& path)
     file.close();
 
     return buffer.str();
+}
+
+esp_err_t SpiffsManager::saveMesh(const std::string& json_string)
+{
+    FILE* f = std::fopen(MESH_FILE_PATH, "w");
+    if (f == nullptr) {
+        ESP_LOGE(TAG, "Falha ao abrir arquivo de malha para escrita");
+        return ESP_FAIL;
+    }
+
+    std::fprintf(f, "%s", json_string.c_str());
+    std::fclose(f);
+
+    ESP_LOGI(TAG, "Nova malha persistida com sucesso em %s", MESH_FILE_PATH);
+    return ESP_OK;
+}
+
+char* SpiffsManager::readMesh()
+{
+    FILE* f = std::fopen(MESH_FILE_PATH, "r");
+    if (f == nullptr) {
+        ESP_LOGI(TAG, "Nenhuma malha encontrada em %s. Dispositivo aguardando deploy.", MESH_FILE_PATH);
+        return nullptr;
+    }
+
+    std::fseek(f, 0, SEEK_END);
+    long size = std::ftell(f);
+    std::fseek(f, 0, SEEK_SET);
+
+    char* buffer = static_cast<char*>(heap_caps_malloc(size + 1, MALLOC_CAP_SPIRAM));
+    if (buffer != nullptr) {
+        std::fread(buffer, 1, size, f);
+        buffer[size] = '\0';
+        ESP_LOGI(TAG, "Malha carregada na PSRAM (%ld bytes)", size);
+    } else {
+        ESP_LOGE(TAG, "Falha ao alocar %ld bytes na PSRAM para a malha", size);
+    }
+
+    std::fclose(f);
+    return buffer;
 }
 
 } // namespace Cefet

@@ -3,28 +3,43 @@
 #include "cefet_node_engine.h"
 #include "network_manager.h"
 #include "api_server.h"
-#include "esp_heap_caps.h"
-#include "esp_flash.h"
+#include "spiffs_manager.h"
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 
-extern "C" void app_main(void)
-{
-    uint32_t flash_size = 0;
-    esp_flash_get_size(NULL, &flash_size);
-    ESP_LOGI("MEMORIA", "=== RELATORIO DE HARDWARE ===");
-    ESP_LOGI("MEMORIA", "Flash Total: %lu MB", flash_size / (1024 * 1024));
-    ESP_LOGI("MEMORIA", "RAM Interna Livre: %zu bytes", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-    ESP_LOGI("MEMORIA", "PSRAM Externa Livre: %zu bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-    ESP_LOGI("MEMORIA", "=============================");
+static const char* TAG = "APP_MAIN";
 
+extern "C" void app_main() {
+    ESP_LOGI(TAG, "Iniciando Node CEFET-61499 (4deacis)...");
+
+    // 1. Inicia o Barramento de Eventos (Coração do Motor)
     Cefet::CefetEngine::start();
+
+    // 2. Monta o Sistema de Arquivos (Memória Flash)
+    Cefet::SpiffsManager::mount();
+
+    // 3. Conecta no Wi-Fi e anuncia no mDNS
     Cefet::NetworkManager::connect();
-    
+
+    // 4. Inicia o servidor REST na porta 80 para escutar a IDE Web
     Cefet::ApiServer::start();
 
-    Cefet::CefetEngine::startFromManifest("/spiffs/config.json");
-
-    while (1) {
-        vTaskDelay(portMAX_DELAY);
+    // 5. Tenta reviver a malha da inicialização anterior (Cold Boot)
+    char* saved_mesh = Cefet::SpiffsManager::readMesh();
+    if (saved_mesh != nullptr) {
+        ESP_LOGI(TAG, "Malha persistente encontrada. A inicializar...");
+        
+        // Recarrega a malha e roteia os fios
+        Cefet::CefetEngine::reloadMesh(saved_mesh);
+        
+        // IMPORTANTE: Como SpiffsManager::readMesh() alocou o arquivo na PSRAM, 
+        // precisamos liberar a memória após o motor instanciar os blocos!
+        heap_caps_free(saved_mesh);
+    } else {
+        ESP_LOGI(TAG, "Nenhuma malha anterior encontrada. Placa em modo IDLE aguardando Deploy.");
     }
+
+    // A Thread principal (app_main) já fez o seu trabalho de orquestração.
+    // Agora o FreeRTOS e os Timers assumem o controle. Podemos deletar esta Task.
+    vTaskDelete(NULL);
 }

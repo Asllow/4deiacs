@@ -1,43 +1,44 @@
 #pragma once
 
 #include "esp_err.h"
-#include <esp_http_server.h>
+#include "esp_http_server.h"
 
 namespace Cefet {
 
 /**
- * @brief Servidor HTTP local para provisionamento e deploy de malhas IEC 61499.
+ * @brief Servidor HTTP nativo integrado ao LwIP para gerenciamento da malha.
  *
- * Implementa uma API REST nativa operando na porta 80, responsavel por receber
- * configuracoes de rede e manifestos JSON para atualizacao a quente (Hot-Deploy).
+ * Expõe endpoints RESTful permitindo que a interface gráfica (IDE) interaja
+ * com o hardware de forma padronizada. Opera em uma Task isolada do FreeRTOS
+ * com prioridade reduzida para não interromper o ciclo de controle de tempo real.
  */
 class ApiServer {
 public:
     /**
-     * @brief Inicializa o servidor HTTP e registra as rotas da API.
+     * @brief Inicializa e arranca o daemon do servidor HTTP na porta 80.
      *
-     * @return esp_err_t ESP_OK caso o servidor seja iniciado com sucesso.
+     * Regista as rotas (URIs) necessarias para o provisionamento e o deploy.
+     *
+     * @return esp_err_t ESP_OK em caso de sucesso.
      */
     static esp_err_t start();
 
-private:
     /**
-     * @brief Manipulador da rota POST /provision.
-     * * Processa a carga JSON, extrai o novo Hostname, armazena na particao NVS
-     * e reinicia o microcontrolador para aplicar as alteracoes no mDNS e Wi-Fi.
-     *
-     * @param req Ponteiro para a estrutura da requisicao HTTP.
-     * @return esp_err_t ESP_OK em caso de sucesso.
+     * @brief Encerra o servidor HTTP e liberta os recursos de rede.
      */
-    static esp_err_t provisionHandler(httpd_req_t *req);
+    static void stop();
+
+private:
+    static httpd_handle_t server_handle;
 
     /**
-     * @brief Manipulador da rota POST /deploy.
-     * * Recebe e valida o manifesto JSON contendo a malha de Blocos de Funcao.
-     * Implementa recebimento em blocos (chunks) para lidar com payloads extensos.
+     * @brief Callback (Handler) para a rota POST /deploy.
      *
-     * @param req Ponteiro para a estrutura da requisicao HTTP.
-     * @return esp_err_t ESP_OK em caso de sucesso.
+     * Aloca o payload JSON iterativamente na PSRAM, realiza a validacao sintatica,
+     * aciona a persistencia via SpiffsManager e dispara o recarregamento do motor.
+     *
+     * @param req Estrutura da requisicao HTTP atual.
+     * @return esp_err_t ESP_OK se o fluxo for concluido.
      */
     static esp_err_t deployHandler(httpd_req_t *req);
 };

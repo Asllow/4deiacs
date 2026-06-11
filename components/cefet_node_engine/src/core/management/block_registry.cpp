@@ -10,6 +10,11 @@ std::unordered_map<std::string, BlockFactoryFunc>& BlockRegistry::getRegistry() 
     return registry;
 }
 
+std::vector<IFunctionBlock*>& BlockRegistry::getInstances() {
+    static std::vector<IFunctionBlock*> instances;
+    return instances;
+}
+
 void BlockRegistry::registerBlock(const std::string& block_type, BlockFactoryFunc factory) {
     auto& registry = getRegistry();
     if (registry.find(block_type) == registry.end()) {
@@ -25,11 +30,26 @@ IFunctionBlock* BlockRegistry::createBlock(const std::string& block_type, const 
     auto it = registry.find(block_type);
     
     if (it != registry.end()) {
-        return it->second(block_id, config);
+        IFunctionBlock* block = it->second(block_id, config);
+        if (block != nullptr) {
+            getInstances().push_back(block);
+        }
+        return block;
     }
     
     ESP_LOGE(TAG, "Tipo de bloco desconhecido ou nao registrado: [%s]", block_type.c_str());
     return nullptr;
+}
+
+void BlockRegistry::clearAll() {
+    auto& instances = getInstances();
+    
+    for (IFunctionBlock* block : instances) {
+        delete block;
+    }
+    
+    instances.clear();
+    ESP_LOGI(TAG, "Todas as instancias de blocos foram destruidas e desalocadas da RAM.");
 }
 
 } // namespace Cefet

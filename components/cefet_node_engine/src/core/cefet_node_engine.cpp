@@ -2,11 +2,10 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
-// Inclusões transferidas da main.cpp para o encapsulamento:
 #include "spiffs_manager.h"
 #include "json_parser.h"
 #include "connection_manager.h"
-#include "e_cycle_block.h"
+#include "block_registry.h"
 
 namespace Cefet {
 
@@ -17,55 +16,19 @@ static const char* TAG = "CEFET_ENGINE";
 esp_err_t CefetEngine::start() {
     setupTelemetry();
 
-    ESP_LOGI(TAG, "Inicializando o Motor de Eventos IEC-61499...");
+    ESP_LOGI(TAG, "A inicializar o Motor de Eventos IEC-61499 (4deacis)...");
 
     esp_err_t err = esp_event_loop_create_default();
     if (err != ESP_OK) {
         if (err == ESP_ERR_INVALID_STATE) {
-            ESP_LOGW(TAG, "Loop de eventos ja estava rodando.");
+            ESP_LOGW(TAG, "Event Loop nativo ja se encontrava em execucao.");
         } else {
-            ESP_LOGE(TAG, "Falha critica ao criar o Event Loop!");
+            ESP_LOGE(TAG, "Falha critica ao alocar o Event Loop no FreeRTOS.");
             return err;
         }
     }
 
-    postEvent(EV_SYSTEM_BOOT);
-
-    ESP_LOGI(TAG, "Motor inicializado e aguardando manifestos (JSON).");
-    return ESP_OK;
-}
-
-esp_err_t CefetEngine::startFromManifest(const std::string& manifest_path) {
-    if (SpiffsManager::mount() != ESP_OK) {
-        ESP_LOGE(TAG, "Parando execucao. Sistema de arquivos inoperante.");
-        return ESP_FAIL;
-    }
-
-    std::string manifest = SpiffsManager::readFile(manifest_path);
-    if (manifest.empty()) {
-        ESP_LOGE(TAG, "Manifesto vazio ou nao encontrado: %s", manifest_path.c_str());
-        return ESP_FAIL;
-    }
-
-    ESP_LOGI(TAG, "Processando Manifesto JSON...");
-    auto blocks = JsonParser::parseManifest(manifest);
-
-    if (ConnectionManager::wireConnections(manifest, blocks)) {
-        ESP_LOGI(TAG, "Cabeamento da malha (Wiring) concluido com sucesso!");
-    } else {
-        ESP_LOGE(TAG, "Falha ao rotear a malha.");
-        return ESP_FAIL;
-    }
-
-    // Busca o bloco de Clock para dar o Play inicial da malha
-    for (auto* block : blocks) {
-        if (block->getId() == "CLOCK_MALHA") {
-            auto* clock = static_cast<ECycleBlock*>(block);
-            clock->startTimer();
-            break;
-        }
-    }
-
+    ESP_LOGI(TAG, "Motor inicializado. Aguardando instrucoes de malha.");
     return ESP_OK;
 }
 
@@ -75,6 +38,34 @@ esp_err_t CefetEngine::postEvent(EventIds event_id, void* event_data, size_t eve
 
 esp_err_t CefetEngine::subscribeEvent(EventIds event_id, esp_event_handler_t event_handler, void* event_handler_arg) {
     return esp_event_handler_register(CEFET_CORE_EVENTS, event_id, event_handler, event_handler_arg);
+}
+
+void CefetEngine::clearMesh() {
+    ESP_LOGI(TAG, "Iniciando destruicao de malha (Hot-Deploy Triggered)...");
+
+    ConnectionManager::clearAll();
+    BlockRegistry::clearAll();
+
+    ESP_LOGI(TAG, "Memoria RAM e registos de eventos libertados com sucesso.");
+}
+
+esp_err_t CefetEngine::reloadMesh(const char* json_manifest) {
+    if (json_manifest == nullptr) {
+        ESP_LOGE(TAG, "Payload JSON nulo. Abortando Hot-Deploy.");
+        return ESP_FAIL;
+    }
+
+    clearMesh();
+
+    esp_err_t parse_result = JsonParser::parseManifest(json_manifest);
+
+    if (parse_result != ESP_OK) {
+        ESP_LOGE(TAG, "Falha no parsing da nova malha. O dispositivo entrou em IDLE.");
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "Hot-Deploy concluido! Sistema a operar com nova topologia.");
+    return ESP_OK;
 }
 
 void CefetEngine::setupTelemetry() {

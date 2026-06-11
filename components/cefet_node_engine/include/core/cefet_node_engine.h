@@ -8,58 +8,60 @@
 namespace Cefet {
 
 /**
- * @brief Motor Principal do Framework CEFET-61499.
+ * @brief Motor Principal e Orquestrador do Framework 4deacis.
+ *
+ * Atua como o "Maestro" do sistema de borda. Mantem a responsabilidade de
+ * instanciar e gerir o barramento de eventos (Event Loop nativo) e coordena
+ * os subsistemas delegados (SPIFFS, JSON, Registry) para executar o 
+ * Hot-Deploy seguro da malha de controlo em tempo real.
  */
 class CefetEngine {
 public:
     /**
-     * @brief Inicializa o motor de eventos e prepara a infraestrutura.
+     * @brief Inicializa o barramento de eventos do FreeRTOS e a telemetria.
      *
-     * @return esp_err_t ESP_OK se o motor iniciou com sucesso.
+     * @return esp_err_t ESP_OK se o motor arrancou com sucesso.
      */
     static esp_err_t start();
 
     /**
-     * @brief Orquestra a inicializacao completa do no de borda.
-     * Monta o sistema de arquivos, converte o JSON, aloca os blocos e executa o roteamento (wiring).
-     * * @param manifest_path Caminho absoluto do arquivo de configuracao na flash (ex: "/spiffs/config.json").
-     * @return esp_err_t ESP_OK se a malha foi montada e roteada com sucesso.
-     */
-    static esp_err_t startFromManifest(const std::string& manifest_path);
-
-    /**
-     * @brief Publica um evento no barramento interno.
+     * @brief Publica um evento no barramento interno de controlo (IEC 61499).
      *
-     * @param event_id ID do evento.
-     * @param event_data Ponteiro para dados (opcional).
-     * @param event_data_size Tamanho dos dados.
-     * @return esp_err_t ESP_OK em caso de sucesso.
+     * @param event_id ID do evento a ser disparado.
+     * @param event_data Ponteiro opcional para transporte de dados.
+     * @param event_data_size Tamanho do payload de dados em bytes.
+     * @return esp_err_t ESP_OK em caso de sucesso no enfileiramento.
      */
     static esp_err_t postEvent(EventIds event_id, void* event_data = nullptr, size_t event_data_size = 0);
 
     /**
-     * @brief Cria uma conexao de roteamento (Wiring) entre um evento e um bloco.
+     * @brief Regista a escuta de um evento para um Bloco de Funcao.
      *
-     * @param event_id O ID do evento a ser monitorado.
-     * @param event_handler A funcao estatica que sera executada quando o evento ocorrer.
-     * @param event_handler_arg Ponteiro para a instancia do bloco (this) que recebera a acao.
-     * @return esp_err_t ESP_OK se a conexao foi estabelecida.
+     * @param event_id O ID do evento a ser monitorizado.
+     * @param event_handler A funcao callback a ser executada.
+     * @param event_handler_arg Ponteiro de contexto (normalmente a instancia 'this' do bloco).
+     * @return esp_err_t ESP_OK se a subscricao foi efetivada.
      */
     static esp_err_t subscribeEvent(EventIds event_id, esp_event_handler_t event_handler, void* event_handler_arg);
 
-private:
     /**
-     * @brief Configura o roteamento de logs com base no Kconfig.
+     * @brief Desaloca a malha atual de forma segura para libertacao de RAM.
+     *
+     * Interrompe todos os blocos em execucao, remove os seus registos no loop
+     * de eventos nativo e liberta a memoria alocada (SRAM e PSRAM).
      */
-    static void setupTelemetry();
+    static void clearMesh();
 
     /**
-     * @brief Interceptador de logs para transmissao em rede.
+     * @brief Recarrega a malha de controlo a partir de um manifesto JSON em rede.
      *
-     * @param fmt String de formatacao padrao C.
-     * @param args Argumentos variadicos vinculados a string.
-     * @return int Numero de caracteres processados.
+     * @param json_manifest String na PSRAM contendo o payload de deploy.
+     * @return esp_err_t ESP_OK se a malha foi montada e iniciada.
      */
+    static esp_err_t reloadMesh(const char* json_manifest);
+
+private:
+    static void setupTelemetry();
     static int networkLogRoute(const char* fmt, va_list args);
 };
 

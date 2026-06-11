@@ -7,9 +7,6 @@ namespace Cefet {
 
 static const char* TAG = "CONNECTION_MANAGER";
 
-/**
- * @brief Funcao auxiliar para buscar um bloco na RAM pelo seu ID.
- */
 static IFunctionBlock* findBlock(const std::vector<IFunctionBlock*>& blocks, const std::string& id) {
     for (auto* b : blocks) {
         if (b->getId() == id) {
@@ -19,24 +16,17 @@ static IFunctionBlock* findBlock(const std::vector<IFunctionBlock*>& blocks, con
     return nullptr;
 }
 
-bool ConnectionManager::wireConnections(const std::string& json_payload, const std::vector<IFunctionBlock*>& blocks) {
-    cJSON* root = cJSON_Parse(json_payload.c_str());
-    if (root == nullptr) {
-        ESP_LOGE(TAG, "Falha na conversao do JSON para o roteamento.");
-        return false;
-    }
-
-    cJSON* conns = cJSON_GetObjectItem(root, "connections");
-    if (!cJSON_IsArray(conns)) {
+bool ConnectionManager::wireConnections(cJSON* conns_array, const std::vector<IFunctionBlock*>& blocks) {
+    // Validacao direta do ponteiro recebido do Parser
+    if (conns_array == nullptr || !cJSON_IsArray(conns_array)) {
         ESP_LOGW(TAG, "O manifesto nao contem um array 'connections'. Roteamento abortado.");
-        cJSON_Delete(root);
         return false;
     }
 
     ESP_LOGI(TAG, "Iniciando Roteamento (Wiring) IEC 61499...");
 
     cJSON* conn = nullptr;
-    cJSON_ArrayForEach(conn, conns) {
+    cJSON_ArrayForEach(conn, conns_array) {
         cJSON* src_node = cJSON_GetObjectItem(conn, "source");
         cJSON* tgt_node = cJSON_GetObjectItem(conn, "target");
 
@@ -47,7 +37,6 @@ bool ConnectionManager::wireConnections(const std::string& json_payload, const s
         std::string source_full = src_node->valuestring;
         std::string target_full = tgt_node->valuestring;
 
-        // Procura pelo ponto (.) que separa o nome do bloco do nome da porta
         size_t src_dot = source_full.find('.');
         size_t tgt_dot = target_full.find('.');
 
@@ -70,7 +59,6 @@ bool ConnectionManager::wireConnections(const std::string& json_payload, const s
             continue;
         }
 
-        // Tenta conectar como DADOS primeiro
         void* data_ptr = src_block->getDataOutput(src_port);
         if (data_ptr != nullptr) {
             if (tgt_block->connectDataInput(tgt_port, data_ptr)) {
@@ -79,14 +67,17 @@ bool ConnectionManager::wireConnections(const std::string& json_payload, const s
                 ESP_LOGE(TAG, "A porta de entrada de dados %s rejeitou a conexao.", target_full.c_str());
             }
         } else {
-            // Se o bloco nao cuspiu um ponteiro de dados, e uma conexao de EVENTO
             src_block->connectEventOutput(src_port, tgt_block, tgt_port);
             ESP_LOGI(TAG, "Fio de EVENTO ligado: [%s].%s ---> [%s].%s", src_id.c_str(), src_port.c_str(), tgt_id.c_str(), tgt_port.c_str());
         }
     }
 
-    cJSON_Delete(root);
+    // Nota: Nao damos cJSON_Delete aqui, pois o JsonParser e quem limpa a arvore ao final!
     return true;
+}
+
+void ConnectionManager::clearAll() {
+    ESP_LOGI(TAG, "Roteamento desfeito (Fios destruidos nativamente em cascata pelos blocos).");
 }
 
 } // namespace Cefet

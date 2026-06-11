@@ -1,27 +1,26 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include "i_function_block.h"
+#include "esp_err.h"
 
 namespace Cefet {
 
 /**
- * @brief JSON Manifest Parser.
+ * @brief Analisador Sintatico e Construtor do Manifesto (JSON).
  *
- * Responsavel por desserializar o manifesto JSON recebido da rede,
- * iterar sobre a lista de blocos funcionais requeridos e coordenar
- * a sua instanciacao atraves do BlockRegistry.
+ * Responsavel por desserializar o manifesto em texto plano recebido da rede,
+ * alocar a arvore cJSON na memoria apenas uma vez, instanciar a lista de 
+ * blocos funcionais via BlockRegistry e invocar o ConnectionManager para 
+ * estabelecer o roteamento fisico.
  */
 class JsonParser {
 public:
     /**
-     * @brief Analisa o manifesto e instancia os blocos correspondentes.
+     * @brief Analisa o manifesto, instancia os blocos e orquestra o roteamento.
      *
-     * @param json_payload String contendo o manifesto JSON no formato IEC 61499 adaptado.
-     * @return std::vector<IFunctionBlock*> Lista de ponteiros para os blocos instanciados e inicializados.
+     * @param json_payload Ponteiro de caracteres com o manifesto.
+     * @return esp_err_t ESP_OK se a malha foi completamente montada e roteada.
      */
-    static std::vector<IFunctionBlock*> parseManifest(const std::string& json_payload);
+    static esp_err_t parseManifest(const char* json_payload);
 };
 
 } // namespace Cefet

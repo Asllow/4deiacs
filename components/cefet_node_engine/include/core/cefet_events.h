@@ -20,6 +20,7 @@ ESP_EVENT_DECLARE_BASE(CEFET_CORE_EVENTS);
 enum EventIds {
     EV_SYSTEM_BOOT = 0,         /*!< Sistema inicializado e pronto para operar. */
     EV_SENSOR_DATA_READY,       /*!< Novo dado de hardware convertido pelo ADC/GPIO. */
+    EV_NETWORK_CONNECTED,
     EV_CONTROL_CALC_DONE,       /*!< Algoritmo (ex: PID) finalizou seu cálculo matemático. */
     EV_NETWORK_RX,              /*!< Pacote de dados recebido pela rede (MQTT/Modbus/UDP). */
     EV_CONFIG_UPDATED           /*!< Novo arquivo JSON recebido, requisita reconfiguração a quente. */
