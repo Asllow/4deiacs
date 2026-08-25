@@ -41,6 +41,7 @@ private:
      * @return esp_err_t ESP_OK se o fluxo for concluido.
      */
     static esp_err_t deployHandler(httpd_req_t *req);
+    static esp_err_t provisionHandler(httpd_req_t *req);
 };
 
 } // namespace Cefet

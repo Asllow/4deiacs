@@ -1,13 +1,14 @@
 #include "mqtt_publisher_block.h"
 #include "block_registry.h"
 #include "esp_log.h"
+#include <string>
 
 namespace Cefet {
 
 static const char* TAG = "MQTT_PUBLISHER_BLOCK";
 
 MqttPublisherBlock::MqttPublisherBlock(const std::string& block_id, const std::string& broker_uri, const std::string& target_topic)
-    : m_id(block_id), m_broker_uri(broker_uri), m_topic(target_topic), m_client(nullptr), m_is_connected(false)
+    : m_id(block_id), m_broker_uri(broker_uri), m_topic(target_topic), m_client(nullptr), m_is_connected(false), m_data_in(nullptr)
 {
 }
 
@@ -55,13 +56,34 @@ bool MqttPublisherBlock::publish(const std::string& payload)
     }
 
     int msg_id = esp_mqtt_client_publish(m_client, m_topic.c_str(), payload.c_str(), 0, 1, 0);
-    
     if (msg_id == -1) {
         ESP_LOGE(TAG, "[%s] Error enqueuing MQTT message.", m_id.c_str());
         return false;
     }
 
     return true;
+}
+
+bool MqttPublisherBlock::connectDataInput(const std::string& port_name, void* data_pointer)
+{
+    if (port_name == "IN_1" || port_name == "PAYLOAD") {
+        m_data_in = static_cast<float*>(data_pointer);
+        return true;
+    }
+    return false;
+}
+
+void MqttPublisherBlock::triggerEventInput(const std::string& event_name)
+{
+    if (event_name == "REQ" || event_name == "SEND") {
+        
+        float value = (m_data_in != nullptr) ? *m_data_in : 0.0f;
+        std::string payload = std::to_string(value);
+        
+        publish(payload);
+        
+        emitEvent("CNF"); 
+    }
 }
 
 void MqttPublisherBlock::mqttEventHandler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data)
@@ -106,10 +128,6 @@ IFunctionBlock* MqttPublisherBlock::create(const std::string& block_id, cJSON* c
     return new MqttPublisherBlock(block_id, broker, topic);
 }
 
-/**
- * @brief Static block registration.
- * Executes prior to app_main to register the factory method into the BlockRegistry.
- */
 static bool registered = []() {
     BlockRegistry::registerBlock("MqttPublisher", MqttPublisherBlock::create);
     return true;
