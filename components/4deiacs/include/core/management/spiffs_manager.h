@@ -3,58 +3,58 @@
 #include <string>
 #include "esp_err.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
- * @brief Gerenciador do Sistema de Arquivos da Memoria Flash (SPIFFS).
+ * @brief Flash Memory File System Manager (SPIFFS).
  *
- * Responsavel por montar a particao de dados interna do ESP32,
- * prover metodos de leitura padrao e gerenciar a persistencia da malha
- * de controle dinamica (JSON) para hot-deploy e recuperacao de estado.
+ * Responsible for mounting the ESP32 internal data partition,
+ * providing standard read methods, and managing the persistence of the
+ * dynamic control mesh (JSON) for hot-deploy and state recovery.
  */
 class SpiffsManager {
 public:
     /**
-     * @brief Monta a particao SPIFFS no caminho virtual "/spiffs".
+     * @brief Mounts the SPIFFS partition on the virtual path "/spiffs".
      *
-     * @return esp_err_t ESP_OK em caso de sucesso.
+     * @return esp_err_t ESP_OK on success.
      */
     static esp_err_t mount();
 
     /**
-     * @brief Desmonta a particao SPIFFS.
+     * @brief Unmounts the SPIFFS partition.
      */
     static void unmount();
 
     /**
-     * @brief Le o conteudo integral de um arquivo de texto generico.
+     * @brief Reads the entire content of a generic text file.
      *
-     * @param path Caminho absoluto do arquivo (ex: "/spiffs/config.json").
-     * @return std::string Conteudo do arquivo (ou string vazia em caso de erro).
+     * @param path Absolute file path (e.g., "/spiffs/config.json").
+     * @return std::string File content (or empty string on error).
      */
     static std::string readFile(const std::string& path);
 
     /**
-     * @brief Salva o manifesto da malha de controle na memoria nao-volatil.
+     * @brief Saves the control mesh manifest to non-volatile memory.
      *
-     * Sobrescreve o arquivo "/spiffs/mesh.json" garantindo que o dispositivo
-     * carregue a malha correta no proximo ciclo de inicializacao.
+     * Overwrites the "/spiffs/mesh.json" file ensuring the device
+     * loads the correct mesh on the next initialization cycle.
      *
-     * @param json_string Payload JSON contendo a definicao da malha.
-     * @return esp_err_t ESP_OK em caso de sucesso, ESP_FAIL caso contrario.
+     * @param json_string JSON payload containing the mesh definition.
+     * @return esp_err_t ESP_OK on success, ESP_FAIL otherwise.
      */
     static esp_err_t saveMesh(const std::string& json_string);
 
     /**
-     * @brief Le o manifesto da malha persistida alocando diretamente na PSRAM.
+     * @brief Reads the persisted mesh manifest, allocating it directly in PSRAM.
      *
-     * @warning O ponteiro retornado deve ser desalocado pelo chamador utilizando
-     * heap_caps_free() para evitar vazamento de memoria externa.
+     * @warning The returned pointer must be deallocated by the caller using
+     * heap_caps_free() to prevent external memory leaks.
      *
-     * @return char* Ponteiro para a string C terminada em nulo contendo o JSON,
-     * ou nullptr caso o arquivo nao exista.
+     * @return char* Pointer to the null-terminated C string containing the JSON,
+     * or nullptr if the file does not exist.
      */
     static char* readMesh();
 };
 
-} // namespace Cefet
+} // namespace deiacs

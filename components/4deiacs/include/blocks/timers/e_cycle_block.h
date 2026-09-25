@@ -3,10 +3,10 @@
 #include <string>
 #include "esp_timer.h"
 #include "i_function_block.h"
-#include "cefet_events.h"
+#include "deiacs_events.h"
 #include "cJSON.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @brief Cyclic Event Generator Service Interface Function Block (E_CYCLE).
@@ -79,4 +79,4 @@ private:
     static void timerCallback(void* arg);
 };
 
-} // namespace Cefet
+} // namespace deiacs

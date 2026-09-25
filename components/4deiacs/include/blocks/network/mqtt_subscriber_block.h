@@ -1,6 +1,6 @@
 /**
  * @file mqtt_subscriber_block.h
- * @brief Definicao do bloco assinante MQTT para arquitetura de eventos.
+ * @brief Definition of the MQTT subscriber block for event architecture.
  */
 #pragma once
 
@@ -9,11 +9,11 @@
 #include "mqtt_client.h"
 #include <string>
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @class MqttSubscriberBlock
- * @brief Bloco de rede que escuta um topico MQTT e emite evento IND ao receber dados.
+ * @brief Network block that listens to an MQTT topic and emits IND event upon receiving data.
  */
 class MqttSubscriberBlock : public IFunctionBlock {
 public:
@@ -40,4 +40,4 @@ private:
     static void mqttEventHandler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
 };
 
-} // namespace Cefet
+} // namespace deiacs

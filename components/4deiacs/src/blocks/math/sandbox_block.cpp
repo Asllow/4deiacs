@@ -4,7 +4,7 @@
 #include "esp_heap_caps.h"
 #include "mbedtls/base64.h"
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "SANDBOX_LUA";
 
@@ -36,14 +36,14 @@ bool SandboxBlock::initialize()
 {
     L = lua_newstate(SandboxBlock::lua_psram_alloc, nullptr);
     if (L == nullptr) {
-        ESP_LOGE(TAG, "[%s] Impossivel alocar PSRAM para a VM Lua.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to allocate PSRAM for Lua VM.", m_id.c_str());
         return false;
     }
 
-    // Sandbox Security Fix: Remove luaL_openlibs(L)
+
     // luaL_openlibs(L);
     
-    // Load only safe mathematical and base libraries
+
     luaL_requiref(L, "_G", luaopen_base, 1);
     lua_pop(L, 1);
     luaL_requiref(L, "math", luaopen_math, 1);
@@ -53,19 +53,19 @@ bool SandboxBlock::initialize()
     luaL_requiref(L, "table", luaopen_table, 1);
     lua_pop(L, 1);
 
-    // Watchdog hook to prevent infinite loops (e.g., DoS via `while true do end`)
+
     lua_sethook(L, [](lua_State* L, lua_Debug* ar) {
         luaL_error(L, "Runtime Error: Instruction limit exceeded (Infinite Loop Prevention)");
     }, LUA_MASKCOUNT, 100000);
 
     if (!m_script_b64.empty()) {
-        ESP_LOGI(TAG, "[%s] Decodificando script Base64...", m_id.c_str());
+        ESP_LOGI(TAG, "[%s] Decoding Base64 script...", m_id.c_str());
         
         size_t b64_len = m_script_b64.length();
         unsigned char* decoded_buffer = static_cast<unsigned char*>(heap_caps_malloc(b64_len + 1, MALLOC_CAP_SPIRAM));
 
         if (decoded_buffer == nullptr) {
-            ESP_LOGE(TAG, "[%s] Falha ao alocar buffer Base64 na PSRAM.", m_id.c_str());
+            ESP_LOGE(TAG, "[%s] Failed to allocate Base64 buffer in PSRAM.", m_id.c_str());
             return false;
         }
 
@@ -77,28 +77,28 @@ bool SandboxBlock::initialize()
             decoded_buffer[actual_out_len] = '\0';
             
             if (luaL_dostring(L, reinterpret_cast<const char*>(decoded_buffer)) != LUA_OK) {
-                ESP_LOGE(TAG, "[%s] Erro Sintatico Lua: %s", m_id.c_str(), lua_tostring(L, -1));
+                ESP_LOGE(TAG, "[%s] Lua Syntax Error: %s", m_id.c_str(), lua_tostring(L, -1));
                 lua_pop(L, 1);
                 heap_caps_free(decoded_buffer);
                 return false;
             }
         } else {
-            ESP_LOGE(TAG, "[%s] Falha mbedtls_base64_decode: %d", m_id.c_str(), ret);
+            ESP_LOGE(TAG, "[%s] mbedtls_base64_decode failed: %d", m_id.c_str(), ret);
             heap_caps_free(decoded_buffer);
             return false;
         }
         heap_caps_free(decoded_buffer);
     } 
     else {
-        ESP_LOGI(TAG, "[%s] Carregando fallback via SPIFFS: %s", m_id.c_str(), m_script_path.c_str());
+        ESP_LOGI(TAG, "[%s] Loading fallback via SPIFFS: %s", m_id.c_str(), m_script_path.c_str());
         if (luaL_dofile(L, m_script_path.c_str()) != LUA_OK) {
-            ESP_LOGE(TAG, "[%s] Erro I/O ou compilacao SPIFFS: %s", m_id.c_str(), lua_tostring(L, -1));
+            ESP_LOGE(TAG, "[%s] SPIFFS I/O or compilation error: %s", m_id.c_str(), lua_tostring(L, -1));
             lua_pop(L, 1);
             return false;
         }
     }
 
-    ESP_LOGI(TAG, "[%s] VM pronta. Portas IN: %zu | OUT: %zu", m_id.c_str(), m_num_in, m_num_out);
+    ESP_LOGI(TAG, "[%s] VM ready. IN ports: %zu | OUT ports: %zu", m_id.c_str(), m_num_in, m_num_out);
     return true;
 }
 
@@ -136,7 +136,7 @@ void SandboxBlock::triggerEventInput(const std::string& event_name)
         lua_getglobal(L, "tick");
 
         if (!lua_isfunction(L, -1)) {
-            ESP_LOGW(TAG, "[%s] Rotina 'tick' ausente no script.", m_id.c_str());
+            ESP_LOGW(TAG, "[%s] 'tick' routine missing in script.", m_id.c_str());
             lua_pop(L, 1);
             return;
         }
@@ -147,7 +147,7 @@ void SandboxBlock::triggerEventInput(const std::string& event_name)
         }
 
         if (lua_pcall(L, m_num_in, m_num_out, 0) != LUA_OK) {
-            ESP_LOGE(TAG, "[%s] Runtime Panic em tick(): %s", m_id.c_str(), lua_tostring(L, -1));
+            ESP_LOGE(TAG, "[%s] Runtime Panic in tick(): %s", m_id.c_str(), lua_tostring(L, -1));
             lua_pop(L, 1);
             return;
         }
@@ -198,4 +198,4 @@ static bool registered = []() {
     return true;
 }();
 
-} // namespace Cefet
+} // namespace deiacs

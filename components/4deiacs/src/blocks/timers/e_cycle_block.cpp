@@ -3,7 +3,7 @@
 #include "block_registry.h"
 #include "esp_log.h"
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "E_CYCLE_BLOCK";
 
@@ -62,14 +62,14 @@ void ECycleBlock::stopTimer()
 void ECycleBlock::timerCallback(void* arg)
 {
     ECycleBlock* instance = static_cast<ECycleBlock*>(arg);
-    // Em vez de gritar no barramento global, aciona a sua propria porta de saida "EV_OUT"
+
     instance->emitEvent("EV_OUT");
 }
 
 IFunctionBlock* ECycleBlock::create(const std::string& block_id, cJSON* config)
 {
-    uint64_t period = 1000; // Default: 1000 ms (1 Hz)
-    int event_id = 1;       // Default: EV_SENSOR_DATA_READY
+    uint64_t period = 1000;
+    int event_id = 1;
 
     if (config != nullptr) {
         cJSON* period_item = cJSON_GetObjectItem(config, "period_ms");
@@ -95,4 +95,4 @@ static bool registered = []() {
     return true;
 }();
 
-} // namespace Cefet
+} // namespace deiacs

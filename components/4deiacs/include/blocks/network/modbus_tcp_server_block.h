@@ -1,6 +1,6 @@
 /**
  * @file modbus_tcp_server_block.h
- * @brief Servidor Modbus TCP Dinamico e Generico.
+ * @brief Dynamic and Generic Modbus TCP Server.
  */
 #pragma once
 
@@ -11,15 +11,15 @@
 #include "freertos/task.h"
 #include "cJSON.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @brief Modbus TCP Server Service Interface Function Block (CSIFB).
  *
- * Implementacao dinamicamente escalavel sobre sockets BSD. 
- * Suporta quantidade configuravel de Holding Registers no JSON.
- * Realiza conversao automatica de float (IEEE 754) para inteiros de 16-bits 
- * utilizando Complemento de 2, permitindo trafego SCADA de numeros negativos.
+ * Dynamically scalable implementation over BSD sockets. 
+ * Supports configurable amount of Holding Registers in JSON.
+ * Performs automatic float to 16-bit integer conversion 
+ * using 2's complement, allowing SCADA traffic of negative numbers.
  */
 class ModbusTcpServerBlock : public IFunctionBlock {
 public:
@@ -52,4 +52,4 @@ private:
     static void serverTask(void* arg);
 };
 
-} /* namespace Cefet */
+} /* namespace deiacs */

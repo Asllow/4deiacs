@@ -1,12 +1,12 @@
 /**
  * @file encoder_input_block.cpp
- * @brief Implementacao do bloco de encoder.
+ * @brief Implementation of the encoder block.
  */
 #include "blocks/io/encoder_input_block.h"
 #include "block_registry.h"
 #include "esp_log.h"
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "ENCODER_INPUT_BLOCK";
 
@@ -36,7 +36,7 @@ bool EncoderInputBlock::initialize()
     unit_config.low_limit = m_low_limit;
     
     if (pcnt_new_unit(&unit_config, &m_pcnt_unit) != ESP_OK) {
-        ESP_LOGE(TAG, "[%s] Falha ao alocar unidade PCNT.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to allocate PCNT unit.", m_id.c_str());
         return false;
     }
 
@@ -65,7 +65,7 @@ bool EncoderInputBlock::initialize()
     pcnt_unit_start(m_pcnt_unit);
 
     m_initialized = true;
-    ESP_LOGI(TAG, "[%s] Bloco Encoder inicializado com sucesso (A:%d, B:%d).", m_id.c_str(), m_gpio_a, m_gpio_b);
+    ESP_LOGI(TAG, "[%s] Encoder Block initialized successfully (A:%d, B:%d).", m_id.c_str(), m_gpio_a, m_gpio_b);
     return true;
 }
 
@@ -109,11 +109,11 @@ IFunctionBlock* EncoderInputBlock::create(const std::string& block_id, cJSON* co
 }
 
 /**
- * @brief Registo estatico na Factory.
+ * @brief Static registration in the Factory.
  */
 static bool registered = []() {
     BlockRegistry::registerBlock("EncoderInput", EncoderInputBlock::create);
     return true;
 }();
 
-} // namespace Cefet
+} // namespace deiacs

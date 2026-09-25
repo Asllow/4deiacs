@@ -3,7 +3,7 @@
 #include "esp_log.h"
 #include <string>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "MQTT_PUBLISHER_BLOCK";
 
@@ -111,7 +111,7 @@ void MqttPublisherBlock::mqttEventHandler(void* handler_args, esp_event_base_t b
 IFunctionBlock* MqttPublisherBlock::create(const std::string& block_id, cJSON* config)
 {
     std::string broker = "mqtt://test.mosquitto.org";
-    std::string topic = "cefet/default";
+    std::string topic = "4deiacs/default";
 
     if (config != nullptr) {
         cJSON* uri_item = cJSON_GetObjectItem(config, "broker_uri");
@@ -133,4 +133,4 @@ static bool registered = []() {
     return true;
 }();
 
-} // namespace Cefet
+} // namespace deiacs

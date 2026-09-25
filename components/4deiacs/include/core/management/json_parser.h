@@ -4,27 +4,27 @@
 #include <vector>
 #include "i_function_block.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
- * @brief Analisador Sintatico e Construtor do Manifesto (JSON).
+ * @brief JSON Manifest Parser and Builder.
  *
- * Responsavel por desserializar o manifesto em texto plano recebido da rede,
- * alocar a arvore cJSON na memoria apenas uma vez, instanciar a lista de 
- * blocos funcionais via BlockRegistry e invocar o ConnectionManager para 
- * estabelecer o roteamento fisico.
+ * Responsible for deserializing the plain-text manifest received from the network,
+ * allocating the cJSON tree in memory only once, instantiating the list of
+ * function blocks via BlockRegistry, and invoking the ConnectionManager to
+ * establish the physical routing.
  */
 class JsonParser {
 public:
 
     /**
-     * @brief Analisa o manifesto, instancia os blocos e orquestra o roteamento.
+     * @brief Parses the manifest, instantiates the blocks, and orchestrates the routing.
      *
-     * @param json_payload Ponteiro de caracteres com o manifesto.
-     * @param out_instances Vetor de blocos que será preenchido caso o parse tenha sucesso.
-     * @return esp_err_t ESP_OK se a malha foi completamente montada e roteada.
+     * @param json_payload Character pointer containing the manifest.
+     * @param out_instances Vector of blocks that will be populated if parsing succeeds.
+     * @return esp_err_t ESP_OK if the mesh was completely assembled and routed.
      */
     static esp_err_t parseManifest(const char* json_payload, std::vector<IFunctionBlock*>& out_instances);
 };
 
-} // namespace Cefet
+} // namespace deiacs

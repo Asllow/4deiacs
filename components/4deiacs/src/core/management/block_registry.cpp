@@ -1,7 +1,7 @@
 #include "block_registry.h"
 #include "esp_log.h"
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "BLOCK_REGISTRY";
 
@@ -19,9 +19,9 @@ void BlockRegistry::registerBlock(const std::string& block_type, BlockFactoryFun
     auto& registry = getRegistry();
     if (registry.find(block_type) == registry.end()) {
         registry[block_type] = factory;
-        ESP_LOGD(TAG, "Bloco [%s] registrado na Fabrica.", block_type.c_str());
+        ESP_LOGD(TAG, "Block [%s] registered in Factory.", block_type.c_str());
     } else {
-        ESP_LOGW(TAG, "Tentativa de registrar o bloco [%s] em duplicidade.", block_type.c_str());
+        ESP_LOGW(TAG, "Attempt to register block [%s] in duplicate.", block_type.c_str());
     }
 }
 
@@ -34,7 +34,7 @@ IFunctionBlock* BlockRegistry::createBlock(const std::string& block_type, const 
         return block;
     }
     
-    ESP_LOGE(TAG, "Tipo de bloco desconhecido ou nao registrado: [%s]", block_type.c_str());
+    ESP_LOGE(TAG, "Unknown or unregistered block type: [%s]", block_type.c_str());
     return nullptr;
 }
 
@@ -46,7 +46,7 @@ void BlockRegistry::clearAll() {
     }
     
     instances.clear();
-    ESP_LOGI(TAG, "Todas as instancias de blocos foram destruidas e desalocadas da RAM.");
+    ESP_LOGI(TAG, "All block instances destroyed and deallocated from RAM.");
 }
 
 void BlockRegistry::swapInstances(std::vector<IFunctionBlock*>& new_instances) {
@@ -54,4 +54,4 @@ void BlockRegistry::swapInstances(std::vector<IFunctionBlock*>& new_instances) {
     getInstances() = new_instances;
 }
 
-} // namespace Cefet
+} // namespace deiacs

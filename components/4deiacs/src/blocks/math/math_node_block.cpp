@@ -1,12 +1,12 @@
 /**
  * @file math_node_block.cpp
- * @brief Implementacao do Bloco Matematico com parser TinyExpr.
+ * @brief Implementation of the Mathematical Block with TinyExpr parser.
  */
 #include "math_node_block.h"
 #include "block_registry.h"
 #include "esp_log.h"
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "MATH_BLOCK";
 
@@ -38,11 +38,11 @@ bool MathNodeBlock::initialize()
     m_compiled_expr = te_compile(m_expression.c_str(), vars, 4, &err_pos);
 
     if (m_compiled_expr == nullptr) {
-        ESP_LOGE(TAG, "[%s] Erro de sintaxe proximo ao caractere %d", m_id.c_str(), err_pos);
+        ESP_LOGE(TAG, "[%s] Syntax error near character %d", m_id.c_str(), err_pos);
         return false;
     }
 
-    ESP_LOGI(TAG, "[%s] Expressao pronta: %s", m_id.c_str(), m_expression.c_str());
+    ESP_LOGI(TAG, "[%s] Ready expression: %s", m_id.c_str(), m_expression.c_str());
     return true;
 }
 
@@ -101,4 +101,4 @@ static bool registered = []() {
     return true;
 }();
 
-} /* namespace Cefet */
+} /* namespace deiacs */

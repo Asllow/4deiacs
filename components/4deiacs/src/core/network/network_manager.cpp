@@ -9,14 +9,14 @@
 #include <cstdio>
 #include <cstring>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "NETWORK_MANAGER";
 
 /**
  * @brief Buffer estatico para armazenamento do identificador de rede do dispositivo.
  */
-static char device_hostname[64] = "4deacis-node";
+static char device_hostname[64] = "4deiacs";
 
 esp_err_t NetworkManager::connect()
 {
@@ -28,10 +28,10 @@ esp_err_t NetworkManager::connect()
     ESP_ERROR_CHECK(ret);
 
     nvs_handle_t nvs_handle;
-    if (nvs_open("4deacis", NVS_READONLY, &nvs_handle) == ESP_OK) {
+    if (nvs_open("4deiacs", NVS_READONLY, &nvs_handle) == ESP_OK) {
         size_t len = sizeof(device_hostname);
         if (nvs_get_str(nvs_handle, "deviceName", device_hostname, &len) != ESP_OK) {
-            ESP_LOGW(TAG, "deviceName nao encontrado na NVS. Usando padrao: %s", device_hostname);
+            ESP_LOGW(TAG, "deviceName not found in NVS. Using default: %s", device_hostname);
         }
         nvs_close(nvs_handle);
     }
@@ -57,15 +57,15 @@ esp_err_t NetworkManager::connect()
                                                         nullptr));
 
     wifi_config_t wifi_config = {};
-    std::strncpy(reinterpret_cast<char*>(wifi_config.sta.ssid), CONFIG_CEFET_WIFI_SSID, sizeof(wifi_config.sta.ssid));
-    std::strncpy(reinterpret_cast<char*>(wifi_config.sta.password), CONFIG_CEFET_WIFI_PASS, sizeof(wifi_config.sta.password));
+    std::strncpy(reinterpret_cast<char*>(wifi_config.sta.ssid), CONFIG_DEIACS_WIFI_SSID, sizeof(wifi_config.sta.ssid));
+    std::strncpy(reinterpret_cast<char*>(wifi_config.sta.password), CONFIG_DEIACS_WIFI_PASS, sizeof(wifi_config.sta.password));
     wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "Subsistema Wi-Fi iniciado. Hostname alvo: %s", device_hostname);
+    ESP_LOGI(TAG, "Wi-Fi subsystem started. Target hostname: %s", device_hostname);
     
     return ESP_OK;
 }
@@ -76,12 +76,12 @@ void NetworkManager::wifiEventHandler(void* arg, esp_event_base_t event_base, in
         esp_wifi_connect();
     } 
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        ESP_LOGW(TAG, "Conexao Wi-Fi perdida. Tentando reconectar...");
+        ESP_LOGW(TAG, "Wi-Fi connection lost. Attempting to reconnect...");
         esp_wifi_connect();
     } 
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         auto* event = static_cast<ip_event_got_ip_t*>(event_data);
-        ESP_LOGI(TAG, "IP atribuido: " IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGI(TAG, "Assigned IP: " IPSTR, IP2STR(&event->ip_info.ip));
         
         static bool mdns_started = false;
         
@@ -101,14 +101,14 @@ void NetworkManager::wifiEventHandler(void* arg, esp_event_base_t event_base, in
                 mdns_service_txt_item_set("_http", "_tcp", "mac", mac_str);
                 mdns_service_txt_item_set("_http", "_tcp", "board", CONFIG_IDF_TARGET);
                 
-                ESP_LOGI(TAG, "mDNS anunciado como: %s.local", device_hostname);
+                ESP_LOGI(TAG, "mDNS announced as: %s.local", device_hostname);
             } else {
-                ESP_LOGE(TAG, "Erro ao inicializar mDNS. Descoberta de rede comprometida.");
+                ESP_LOGE(TAG, "Error initializing mDNS. Network discovery compromised.");
             }
         }
 
-        CefetEngine::postEvent(EV_NETWORK_CONNECTED);
+        DeiacsEngine::postEvent(EV_NETWORK_CONNECTED);
     }
 }
 
-} // namespace Cefet
+} // namespace deiacs

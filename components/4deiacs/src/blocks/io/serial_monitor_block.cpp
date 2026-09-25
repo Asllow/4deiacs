@@ -1,12 +1,12 @@
 /**
  * @file serial_monitor_block.cpp
- * @brief Implementacao da Sonda Serial.
+ * @brief Implementation of the Serial Probe.
  */
 #include "serial_monitor_block.h"
 #include "block_registry.h"
 #include "esp_log.h"
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "SERIAL_MONITOR";
 
@@ -20,7 +20,7 @@ SerialMonitorBlock::~SerialMonitorBlock() = default;
 
 bool SerialMonitorBlock::initialize()
 {
-    ESP_LOGI(TAG, "[%s] Monitor Serial inicializado com %zu portas de entrada.", m_id.c_str(), m_num_in);
+    ESP_LOGI(TAG, "[%s] Serial Monitor initialized with %zu input ports.", m_id.c_str(), m_num_in);
     return true;
 }
 
@@ -75,4 +75,4 @@ static bool registered = []() {
     return true;
 }();
 
-} /* namespace Cefet */
+} /* namespace deiacs */

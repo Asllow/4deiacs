@@ -1,39 +1,39 @@
-menu "CEFET-61499 Node Configuration"
+menu "4deiacs Node Configuration"
 
-    choice CEFET_LOG_MODE
+    choice DEIACS_LOG_MODE
         prompt "Node Telemetry and Log Mode"
-        default CEFET_LOG_MODE_LOCAL
+        default DEIACS_LOG_MODE_LOCAL
         help
             Define como os logs do framework serao roteados durante a operacao do no.
             Esta configuracao afeta a observabilidade e o consumo de processamento.
 
-        config CEFET_LOG_MODE_DISABLED
+        config DEIACS_LOG_MODE_DISABLED
             bool "Disabled (Silent Mode)"
             help
                 Desativa todas as saidas de log e telemetria. O no operara de forma 
                 totalmente silenciosa. Ideal para o ambiente de producao final, 
                 poupando ciclos de CPU do FreeRTOS.
 
-        config CEFET_LOG_MODE_LOCAL
+        config DEIACS_LOG_MODE_LOCAL
             bool "Local (Serial/USB)"
             help
                 Mantem os logs (ESP_LOGI, ESP_LOGE) direcionados para a porta serial (UART). 
                 Ideal para testes de bancada com o cabo conectado.
 
-        config CEFET_LOG_MODE_NETWORK
+        config DEIACS_LOG_MODE_NETWORK
             bool "Network (MQTT/UDP)"
             help
                 Silencia a porta serial e prepara o redirecionamento do fluxo de logs 
                 para a rede do laboratorio. 
     endchoice
 
-    config CEFET_WIFI_SSID
+    config DEIACS_WIFI_SSID
         string "Wi-Fi SSID"
         default "MyNetwork"
         help
             Nome da rede Wi-Fi (SSID) temporaria ou do switch do laboratorio.
 
-    config CEFET_WIFI_PASS
+    config DEIACS_WIFI_PASS
         string "Wi-Fi Password"
         default "123456"
         help

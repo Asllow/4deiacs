@@ -1,6 +1,6 @@
 /**
  * @file encoder_input_block.h
- * @brief Definicao do bloco de entrada de encoder rotativo via PCNT.
+ * @brief Definition of the rotary encoder input block via PCNT.
  */
 #pragma once
 
@@ -9,11 +9,11 @@
 #include "driver/pulse_cnt.h"
 #include <string>
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @class EncoderInputBlock
- * @brief Bloco que le o hardware PCNT para contar pulsos de um encoder.
+ * @brief Block that reads the PCNT hardware to count pulses from an encoder.
  */
 class EncoderInputBlock : public IFunctionBlock {
 public:
@@ -45,4 +45,4 @@ private:
     float m_angle_out;
 };
 
-} // namespace Cefet
+} // namespace deiacs

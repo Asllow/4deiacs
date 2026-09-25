@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "MCPWM_MOTOR_BLOCK";
 
@@ -108,9 +108,9 @@ bool McpwmMotorBlock::setSpeed(float speed_percent)
 
 IFunctionBlock* McpwmMotorBlock::create(const std::string& block_id, cJSON* config)
 {
-    int gpio_a = 15;            // Default GPIO IN1
-    int gpio_b = 16;            // Default GPIO IN2
-    uint32_t freq = 20000;      // Default Frequency (Hz)
+    int gpio_a = 15;
+    int gpio_b = 16;
+    uint32_t freq = 20000;
 
     if (config != nullptr) {
         cJSON* gpio_a_item = cJSON_GetObjectItem(config, "gpio_a");
@@ -141,4 +141,4 @@ static bool registered = []() {
     return true;
 }();
 
-} // namespace Cefet
+} // namespace deiacs

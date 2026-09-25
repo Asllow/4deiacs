@@ -1,6 +1,6 @@
 /**
  * @file modbus_tcp_client_block.h
- * @brief Definicao do bloco Modbus TCP Client para envio de dados.
+ * @brief Definition of the Modbus TCP Client block for data transmission.
  */
 #pragma once
 
@@ -9,11 +9,11 @@
 #include <string>
 #include <cstdint>
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @class ModbusTcpClientBlock
- * @brief Bloco de rede que atua como Modbus TCP Client (Master) para escrever em registradores de um Server remoto.
+ * @brief Network block acting as a Modbus TCP Client (Master) to write registers on a remote Server.
  */
 class ModbusTcpClientBlock : public IFunctionBlock {
 public:
@@ -47,4 +47,4 @@ private:
     bool sendWriteSingleRegister(uint16_t value);
 };
 
-} // namespace Cefet
+} // namespace deiacs

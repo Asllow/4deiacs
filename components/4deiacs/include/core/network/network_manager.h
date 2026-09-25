@@ -3,36 +3,36 @@
 #include "esp_err.h"
 #include "esp_event.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
- * @brief Gerenciador da Pilha de Conectividade do No.
+ * @brief Node Connectivity Stack Manager.
  *
- * Encapsula a inicializacao da memoria NVS, da interface de rede (esp_netif),
- * do driver Wi-Fi nativo do ESP32 e da identificacao via mDNS. Opera de forma 
- * assincrona e publica o evento EV_NETWORK_CONNECTED no barramento central 
- * quando o IP e obtido.
+ * Encapsulates the initialization of NVS memory, network interface (esp_netif),
+ * native ESP32 Wi-Fi driver, and mDNS identification. Operates asynchronously
+ * and publishes the EV_NETWORK_CONNECTED event on the central bus
+ * when an IP is obtained.
  */
 class NetworkManager {
 public:
     /**
-     * @brief Inicializa o hardware Wi-Fi, configura o mDNS e inicia a tentativa de conexao.
-     * Utiliza as credenciais definidas via menuconfig e hostname na NVS.
+     * @brief Initializes Wi-Fi hardware, configures mDNS, and starts the connection attempt.
+     * Uses credentials defined via menuconfig and hostname stored in NVS.
      *
-     * @return esp_err_t ESP_OK se o processo de conexao foi iniciado com sucesso.
+     * @return esp_err_t ESP_OK if the connection process successfully started.
      */
     static esp_err_t connect();
 
 private:
     /**
-     * @brief Callback interna para tratamento de eventos nativos do driver Wi-Fi e IP.
+     * @brief Internal callback for handling native Wi-Fi and IP driver events.
      *
-     * @param arg Argumentos de contexto.
-     * @param event_base Familia do evento (WIFI_EVENT ou IP_EVENT).
-     * @param event_id Identificador especifico do evento.
-     * @param event_data Dados associados (ex: IP recebido).
+     * @param arg Context arguments.
+     * @param event_base Event family (WIFI_EVENT or IP_EVENT).
+     * @param event_id Specific event identifier.
+     * @param event_data Associated data (e.g., received IP).
      */
     static void wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 };
 
-} // namespace Cefet
+} // namespace deiacs

@@ -11,60 +11,62 @@ extern "C" {
     #include "lauxlib.h"
 }
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @brief Sandbox Service Interface Function Block (SIFB).
  *
- * Embute um interpretador Lua isolado, alocando todos os seus recursos 
- * estritamente na PSRAM para proteger a SRAM critica. Suporta inicializacao
- * hibrida (via Base64 injetado na RAM ou fallback para ficheiros no SPIFFS).
+ * Embeds an isolated Lua interpreter, allocating all its resources 
+ * strictly in PSRAM to protect critical SRAM. Supports hybrid 
+ * initialization (via Base64 injected into RAM or fallback to SPIFFS files).
  */
 class SandboxBlock : public IFunctionBlock {
 public:
     /**
-     * @brief Construtor do Sandbox hibrido.
-     * * @param block_id ID unico do bloco na rede.
-     * @param script_b64 Codigo fonte Lua codificado em Base64 (Opcional).
-     * @param script_path Caminho de fallback no SPIFFS (Ex: "/spiffs/script.lua").
-     * @param num_in Quantidade de portas de entrada dinâmicas.
-     * @param num_out Quantidade de portas de saida dinâmicas.
+     * @brief Hybrid Sandbox constructor.
+     * 
+     * @param block_id Unique ID of the block in the network.
+     * @param script_b64 Base64 encoded Lua source code (Optional).
+     * @param script_path SPIFFS fallback path (e.g., "/spiffs/script.lua").
+     * @param num_in Number of dynamic input ports.
+     * @param num_out Number of dynamic output ports.
      */
     SandboxBlock(const std::string& block_id, const std::string& script_b64, const std::string& script_path, size_t num_in, size_t num_out);
 
     /**
-     * @brief Destroi a instância isolada da VM e liberta a RAM.
+     * @brief Destroys the isolated VM instance and frees RAM.
      */
     ~SandboxBlock() override;
 
     /**
-     * @brief Inicializa o Estado Lua e invoca o parser de codigo seguro.
-     * * @return true se compilado com sucesso.
+     * @brief Initializes the Lua State and invokes the secure code parser.
+     * 
+     * @return true if compiled successfully.
      */
     bool initialize() override;
 
     /**
-     * @brief Obtem a identificacao do bloco.
+     * @brief Gets the block identification.
      */
     std::string getId() const override;
 
     /**
-     * @brief Retorna o ponteiro para os resultados alocados (Data Out).
+     * @brief Returns the pointer to the allocated results (Data Out).
      */
     void* getDataOutput(const std::string& port_name) override;
 
     /**
-     * @brief Vincula um ponteiro de dados as entradas dinamicas (Data In).
+     * @brief Binds a data pointer to the dynamic inputs (Data In).
      */
     bool connectDataInput(const std::string& port_name, void* data_pointer) override;
 
     /**
-     * @brief Invoca a funcao 'tick' da VM Lua com passagem segura de argumentos.
+     * @brief Invokes the Lua VM 'tick' function with safe argument passing.
      */
     void triggerEventInput(const std::string& event_name) override;
 
     /**
-     * @brief Instanciador para o BlockRegistry.
+     * @brief Instantiator for BlockRegistry.
      */
     static IFunctionBlock* create(const std::string& block_id, cJSON* config);
 
@@ -81,9 +83,9 @@ private:
     std::vector<float> m_outputs;
 
     /**
-     * @brief Alocador customizado para travar a VM Lua na PSRAM.
+     * @brief Custom allocator to lock Lua VM in PSRAM.
      */
     static void* lua_psram_alloc(void* ud, void* ptr, size_t osize, size_t nsize);
 };
 
-} // namespace Cefet
+} // namespace deiacs

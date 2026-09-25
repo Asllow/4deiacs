@@ -1,12 +1,12 @@
 /**
  * @file analog_input_block.cpp
- * @brief Implementacao do bloco de conversao analogica.
+ * @brief Implementation of the analog conversion block.
  */
 #include "analog_input_block.h"
 #include "block_registry.h"
 #include "esp_log.h"
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "ANALOG_INPUT_BLOCK";
 
@@ -34,7 +34,7 @@ bool AnalogInputBlock::initialize()
 
     esp_err_t err = adc_oneshot_new_unit(&init_config, &m_adc_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "[%s] Falha ao alocar unidade ADC.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to allocate ADC unit.", m_id.c_str());
         return false;
     }
 
@@ -44,12 +44,12 @@ bool AnalogInputBlock::initialize()
 
     err = adc_oneshot_config_channel(m_adc_handle, m_channel, &config);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "[%s] Falha ao configurar canal ADC.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to configure ADC channel.", m_id.c_str());
         return false;
     }
 
     m_initialized = true;
-    ESP_LOGI(TAG, "[%s] Bloco ADC inicializado com sucesso.", m_id.c_str());
+    ESP_LOGI(TAG, "[%s] ADC Block initialized successfully.", m_id.c_str());
     return true;
 }
 
@@ -66,7 +66,7 @@ bool AnalogInputBlock::readRaw(int* out_value)
 
     esp_err_t err = adc_oneshot_read(m_adc_handle, m_channel, out_value);
     if (err != ESP_OK) {
-        ESP_LOGW(TAG, "[%s] Falha na leitura do canal ADC.", m_id.c_str());
+        ESP_LOGW(TAG, "[%s] Failed to read from ADC channel.", m_id.c_str());
         return false;
     }
 
@@ -74,7 +74,7 @@ bool AnalogInputBlock::readRaw(int* out_value)
 }
 
 /* ========================================================================= */
-/* IMPLEMENTACAO DAS PORTAS IEC 61499                                        */
+/* IEC 61499 PORTS IMPLEMENTATION                                        */
 /* ========================================================================= */
 
 void* AnalogInputBlock::getDataOutput(const std::string& port_name)
@@ -122,11 +122,11 @@ IFunctionBlock* AnalogInputBlock::create(const std::string& block_id, cJSON* con
 }
 
 /**
- * @brief Registo estatico na Factory.
+ * @brief Static registration in the Factory.
  */
 static bool registered = []() {
     BlockRegistry::registerBlock("AnalogInput", AnalogInputBlock::create);
     return true;
 }();
 
-} /* namespace Cefet */
+} /* namespace deiacs */

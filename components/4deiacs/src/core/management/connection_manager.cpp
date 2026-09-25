@@ -1,9 +1,8 @@
 #include "connection_manager.h"
 #include "cJSON.h"
 #include "esp_log.h"
-#include <sstream>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "CONNECTION_MANAGER";
 
@@ -17,13 +16,13 @@ static IFunctionBlock* findBlock(const std::vector<IFunctionBlock*>& blocks, con
 }
 
 bool ConnectionManager::wireConnections(cJSON* conns_array, const std::vector<IFunctionBlock*>& blocks) {
-    // Validacao direta do ponteiro recebido do Parser
+
     if (conns_array == nullptr || !cJSON_IsArray(conns_array)) {
-        ESP_LOGW(TAG, "O manifesto nao contem um array 'connections'. Roteamento abortado.");
+        ESP_LOGW(TAG, "Manifest does not contain a 'connections' array. Routing aborted.");
         return false;
     }
 
-    ESP_LOGI(TAG, "Iniciando Roteamento (Wiring) IEC 61499...");
+    ESP_LOGI(TAG, "Starting IEC 61499 Routing (Wiring)...");
 
     cJSON* conn = nullptr;
     cJSON_ArrayForEach(conn, conns_array) {
@@ -41,7 +40,7 @@ bool ConnectionManager::wireConnections(cJSON* conns_array, const std::vector<IF
         size_t tgt_dot = target_full.find('.');
 
         if (src_dot == std::string::npos || tgt_dot == std::string::npos) {
-            ESP_LOGE(TAG, "Erro de sintaxe na conexao (Falta o ponto): %s -> %s", source_full.c_str(), target_full.c_str());
+            ESP_LOGE(TAG, "Connection syntax error (Missing dot): %s -> %s", source_full.c_str(), target_full.c_str());
             continue;
         }
 
@@ -55,20 +54,20 @@ bool ConnectionManager::wireConnections(cJSON* conns_array, const std::vector<IF
         IFunctionBlock* tgt_block = findBlock(blocks, tgt_id);
 
         if (src_block == nullptr || tgt_block == nullptr) {
-            ESP_LOGE(TAG, "Bloco ausente na placa. Falha ao plugar: %s -> %s", source_full.c_str(), target_full.c_str());
+            ESP_LOGE(TAG, "Block missing on board. Failed to plug: %s -> %s", source_full.c_str(), target_full.c_str());
             continue;
         }
 
         void* data_ptr = src_block->getDataOutput(src_port);
         if (data_ptr != nullptr) {
             if (tgt_block->connectDataInput(tgt_port, data_ptr)) {
-                ESP_LOGI(TAG, "Fio de DADOS ligado: [%s].%s ---> [%s].%s", src_id.c_str(), src_port.c_str(), tgt_id.c_str(), tgt_port.c_str());
+                ESP_LOGI(TAG, "DATA wire connected: [%s].%s ---> [%s].%s", src_id.c_str(), src_port.c_str(), tgt_id.c_str(), tgt_port.c_str());
             } else {
-                ESP_LOGE(TAG, "A porta de entrada de dados %s rejeitou a conexao.", target_full.c_str());
+                ESP_LOGE(TAG, "Data input port %s rejected the connection.", target_full.c_str());
             }
         } else {
             src_block->connectEventOutput(src_port, tgt_block, tgt_port);
-            ESP_LOGI(TAG, "Fio de EVENTO ligado: [%s].%s ---> [%s].%s", src_id.c_str(), src_port.c_str(), tgt_id.c_str(), tgt_port.c_str());
+            ESP_LOGI(TAG, "EVENT wire connected: [%s].%s ---> [%s].%s", src_id.c_str(), src_port.c_str(), tgt_id.c_str(), tgt_port.c_str());
         }
     }
 
@@ -76,7 +75,7 @@ bool ConnectionManager::wireConnections(cJSON* conns_array, const std::vector<IF
 }
 
 void ConnectionManager::clearAll() {
-    ESP_LOGI(TAG, "Roteamento desfeito (Fios destruidos nativamente em cascata pelos blocos).");
+    ESP_LOGI(TAG, "Routing undone (Wires destroyed natively in cascade by blocks).");
 }
 
-} // namespace Cefet
+} // namespace deiacs

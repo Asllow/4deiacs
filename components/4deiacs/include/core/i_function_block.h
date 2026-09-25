@@ -5,39 +5,41 @@
 #include <unordered_map>
 #include "4deiacs_node_engine.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
- * @brief Interface base para todos os Function Blocks do padrao CEFET-61499.
- * * Esta interface garante o polimorfismo do sistema. Qualquer bloco de controle, 
- * I/O de hardware ou interface de rede deve herdar desta classe. Isso permite 
- * que o Gerenciador de Instancias (JSON Parser) trate todos os blocos de forma 
- * generica, alocando-os dinamicamente na memoria RAM do ESP32.
+ * @brief Base interface for all Function Blocks in the 4deiacs framework.
+ * 
+ * This interface guarantees system polymorphism. Any control block, 
+ * hardware I/O, or network interface must inherit from this class. This allows 
+ * the Instance Manager (JSON Parser) to treat all blocks generically, 
+ * allocating them dynamically in the ESP32 RAM.
  */
 class IFunctionBlock {
 protected:
     /**
-     * @brief Estrutura interna para mapear o destino de um evento.
+     * @brief Internal structure to map the destination of an event.
      */
     struct EventTarget {
         IFunctionBlock* block;
         std::string port;
     };
 
-    /** @brief Mapa de rotas de eventos de saida (Fios Vermelhos) */
+    /** @brief Map of output event routes */
     std::unordered_map<std::string, std::vector<EventTarget>> m_event_routes;
 
     /**
-     * @brief Dispara uma porta de Evento de Saida (Event Out).
-     * Acorda imediatamente (Efeito Domino) todos os blocos conectados a esta porta.
-     * * @param event_out_name Nome da porta (ex: "CNF" ou "EV_OUT").
+     * @brief Triggers an Output Event (Event Out).
+     * Enqueues the event execution for all blocks connected to this port.
+     * 
+     * @param event_out_name Port name (e.g., "CNF" or "EV_OUT").
      */
     void emitEvent(const std::string& event_out_name) {
         auto it = m_event_routes.find(event_out_name);
         if (it != m_event_routes.end()) {
             for (auto& target : it->second) {
                 if (target.block) {
-                    CefetEngine::enqueueBlockEvent(target.block, target.port);
+                    DeiacsEngine::enqueueBlockEvent(target.block, target.port);
                 }
             }
         }
@@ -45,69 +47,74 @@ protected:
 
 public:
     /**
-     * @brief Destrutor virtual padrao.
-     * Garante a liberacao correta de memoria das classes derivadas.
+     * @brief Default virtual destructor.
+     * Ensures proper memory deallocation for derived classes.
      */
     virtual ~IFunctionBlock() = default;
 
     /**
-     * @brief Rotina de inicializacao do Bloco Funcional.
-     * Deve ser chamada logo apos a instanciacao para configurar perifericos
-     * (ex: pinos de GPIO) ou alocar recursos de rede.
-     * * @return true Se inicializado com sucesso.
-     * @return false Se ocorreu falha (ex: hardware nao responde).
+     * @brief Function Block initialization routine.
+     * Must be called right after instantiation to configure peripherals
+     * (e.g., GPIO pins) or allocate network resources.
+     * 
+     * @return true If successfully initialized.
+     * @return false If an error occurred (e.g., hardware unresponsive).
      */
     virtual bool initialize() = 0;
 
     /**
-     * @brief Recupera a identificacao unica do bloco instanciado.
-     * Este ID e utilizado para criar as conexoes (Wiring) entre os blocos.
-     * * @return std::string contendo o ID (ex: "PID_NIVEL_TANQUE_1").
+     * @brief Retrieves the unique identifier of the instantiated block.
+     * This ID is used to create the connections (Wiring) between blocks.
+     * 
+     * @return std::string containing the ID (e.g., "TANK_LEVEL_PID_1").
      */
     virtual std::string getId() const = 0;
 
     // =========================================================================
-    // PORTAS DE ROTEAMENTO IEC 61499
+    // IEC 61499 ROUTING PORTS
     // =========================================================================
 
     /**
-     * @brief Recupera o ponteiro de memoria de uma porta de Saida de Dados (Data Out).
-     * * @param port_name Nome da porta na norma (ex: "DATA_OUT").
-     * @return void* Ponteiro para a variavel interna do bloco, ou nullptr se nao existir.
+     * @brief Retrieves the memory pointer of a Data Output port (Data Out).
+     * 
+     * @param port_name Name of the port according to the standard (e.g., "DATA_OUT").
+     * @return void* Pointer to the internal variable of the block, or nullptr if it does not exist.
      */
     virtual void* getDataOutput(const std::string& port_name) {
         return nullptr; 
     }
 
     /**
-     * @brief Conecta um ponteiro externo a uma porta de Entrada de Dados (Data In).
-     * O bloco passara a ler o dado diretamente desta regiao de memoria.
-     * * @param port_name Nome da porta na norma (ex: "PAYLOAD_IN").
-     * @param data_pointer Ponteiro de memoria originado de outro bloco.
-     * @return true Se a porta existe e a conexao foi aceita.
+     * @brief Connects an external pointer to a Data Input port (Data In).
+     * The block will read data directly from this memory region.
+     * 
+     * @param port_name Name of the port according to the standard (e.g., "PAYLOAD_IN").
+     * @param data_pointer Memory pointer originating from another block.
+     * @return true If the port exists and the connection was accepted.
      */
     virtual bool connectDataInput(const std::string& port_name, void* data_pointer) {
         return false;
     }
 
     /**
-     * @brief Aciona uma porta de Entrada de Evento (Event In).
-     * Executa a logica interna do bloco associada a este evento.
-     * * @param event_name Nome do evento na norma (ex: "REQ" ou "INIT").
+     * @brief Triggers an Event Input port (Event In).
+     * Executes the block's internal logic associated with this event.
+     * 
+     * @param event_name Name of the event according to the standard (e.g., "REQ" or "INIT").
      */
     virtual void triggerEventInput(const std::string& event_name) {
-        // Implementacao padrao vazia para nao quebrar blocos que ainda nao possuem portas
     }
 
     /**
-     * @brief Registra um 'fio' de evento ligando a saida deste bloco a entrada de outro.
-     * * @param event_out_name Nome da porta de saida deste bloco (ex: "CNF").
-     * @param target_block Ponteiro para a instancia do bloco de destino na memoria.
-     * @param target_port Nome da porta de entrada no bloco de destino (ex: "REQ").
+     * @brief Registers an event wire linking the output of this block to the input of another.
+     * 
+     * @param event_out_name Name of the output port of this block (e.g., "CNF").
+     * @param target_block Pointer to the target block instance in memory.
+     * @param target_port Name of the input port on the target block (e.g., "REQ").
      */
     virtual void connectEventOutput(const std::string& event_out_name, IFunctionBlock* target_block, const std::string& target_port) {
         m_event_routes[event_out_name].push_back({target_block, target_port});
     }
 };
 
-} // namespace Cefet
+} // namespace deiacs

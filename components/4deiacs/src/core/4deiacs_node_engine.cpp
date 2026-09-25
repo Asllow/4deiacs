@@ -7,73 +7,80 @@
 #include "i_function_block.h"
 #include <cstring>
 
-namespace Cefet {
+namespace deiacs {
 
 struct BlockEventMsg {
     IFunctionBlock* target_block;
     char target_port[16];
 };
 
-QueueHandle_t CefetEngine::s_event_queue = nullptr;
+QueueHandle_t DeiacsEngine::s_event_queue = nullptr;
+SemaphoreHandle_t DeiacsEngine::s_mesh_mutex = nullptr;
 
-ESP_EVENT_DEFINE_BASE(CEFET_CORE_EVENTS);
+ESP_EVENT_DEFINE_BASE(DEIACS_CORE_EVENTS);
 
-static const char *TAG = "CEFET_ENGINE";
+static const char *TAG = "DEIACS_ENGINE";
 
-esp_err_t CefetEngine::start() {
+esp_err_t DeiacsEngine::start() {
   setupTelemetry();
 
-  ESP_LOGI(TAG, "A inicializar o Motor de Eventos IEC-61499 (4deacis)...");
+  ESP_LOGI(TAG, "Initializing IEC-61499 Event Engine (4deiacs)...");
 
   esp_err_t err = esp_event_loop_create_default();
   if (err != ESP_OK) {
     if (err == ESP_ERR_INVALID_STATE) {
-      ESP_LOGW(TAG, "Event Loop nativo ja se encontrava em execucao.");
+      ESP_LOGW(TAG, "Native Event Loop was already running.");
     } else {
-      ESP_LOGE(TAG, "Falha critica ao alocar o Event Loop no FreeRTOS.");
+      ESP_LOGE(TAG, "Critical failure allocating Event Loop in FreeRTOS.");
       return err;
     }
   }
 
-  // Cria a fila do scheduler IEC 61499 (128 eventos pendentes max)
+
   s_event_queue = xQueueCreate(128, sizeof(BlockEventMsg));
   if (s_event_queue == nullptr) {
-      ESP_LOGE(TAG, "Falha critica ao alocar a Event Queue do IEC 61499.");
+      ESP_LOGE(TAG, "Critical failure allocating IEC 61499 Event Queue.");
       return ESP_FAIL;
   }
 
-  // Cria a task despachante central (Scheduler de Eventos) - Alta prioridade para determinismo
-  xTaskCreatePinnedToCore(dispatcherTask, "CefetDispatcher", 4096, nullptr, 15, nullptr, 1);
+  s_mesh_mutex = xSemaphoreCreateMutex();
+  if (s_mesh_mutex == nullptr) {
+      ESP_LOGE(TAG, "Critical failure allocating the Mesh Mutex.");
+      return ESP_FAIL;
+  }
 
-  ESP_LOGI(TAG, "Motor inicializado. Aguardando instrucoes de malha.");
+
+  xTaskCreatePinnedToCore(dispatcherTask, "4deiacsDispatch", 4096, nullptr, 15, nullptr, 1);
+
+  ESP_LOGI(TAG, "Engine initialized. Awaiting mesh instructions.");
   return ESP_OK;
 }
 
-esp_err_t CefetEngine::postEvent(EventIds event_id, void *event_data,
+esp_err_t DeiacsEngine::postEvent(EventIds event_id, void *event_data,
                                  size_t event_data_size) {
-  return esp_event_post(CEFET_CORE_EVENTS, event_id, event_data,
+  return esp_event_post(DEIACS_CORE_EVENTS, event_id, event_data,
                         event_data_size, portMAX_DELAY);
 }
 
-esp_err_t CefetEngine::subscribeEvent(EventIds event_id,
+esp_err_t DeiacsEngine::subscribeEvent(EventIds event_id,
                                       esp_event_handler_t event_handler,
                                       void *event_handler_arg) {
-  return esp_event_handler_register(CEFET_CORE_EVENTS, event_id, event_handler,
+  return esp_event_handler_register(DEIACS_CORE_EVENTS, event_id, event_handler,
                                     event_handler_arg);
 }
 
-void CefetEngine::clearMesh() {
-  ESP_LOGI(TAG, "Iniciando destruicao de malha (Hot-Deploy Triggered)...");
+void DeiacsEngine::clearMesh() {
+  ESP_LOGI(TAG, "Initiating mesh destruction (Hot-Deploy Triggered)...");
 
   ConnectionManager::clearAll();
   BlockRegistry::clearAll();
 
-  ESP_LOGI(TAG, "Memoria RAM e registos de eventos libertados com sucesso.");
+  ESP_LOGI(TAG, "RAM memory and event registries freed successfully.");
 }
 
-esp_err_t CefetEngine::reloadMesh(const char *json_manifest) {
+esp_err_t DeiacsEngine::reloadMesh(const char *json_manifest) {
   if (json_manifest == nullptr) {
-    ESP_LOGE(TAG, "Payload JSON nulo. Abortando Hot-Deploy.");
+    ESP_LOGE(TAG, "Null JSON payload. Aborting Hot-Deploy.");
     return ESP_FAIL;
   }
 
@@ -82,31 +89,36 @@ esp_err_t CefetEngine::reloadMesh(const char *json_manifest) {
 
   if (parse_result != ESP_OK) {
     ESP_LOGE(TAG,
-             "Falha no parsing da nova malha. Abortando Hot-Deploy, mantendo malha anterior.");
+             "Failed to parse new mesh. Aborting Hot-Deploy, keeping previous mesh.");
     return ESP_FAIL;
   }
 
-  // Atomic Hot-Deploy: only now we swap the mesh
-  ESP_LOGI(TAG, "Iniciando destruicao da malha antiga e substituicao...");
-  BlockRegistry::swapInstances(new_mesh);
 
-  ESP_LOGI(TAG, "Hot-Deploy concluido! Sistema a operar com nova topologia.");
+  ESP_LOGI(TAG, "Initiating old mesh destruction and replacement...");
+  
+  if (xSemaphoreTake(s_mesh_mutex, portMAX_DELAY) == pdTRUE) {
+      xQueueReset(s_event_queue);
+      BlockRegistry::swapInstances(new_mesh);
+      xSemaphoreGive(s_mesh_mutex);
+  }
+
+  ESP_LOGI(TAG, "Hot-Deploy complete! System operating with new topology.");
   return ESP_OK;
 }
 
-void CefetEngine::setupTelemetry() {
-#if defined(CONFIG_CEFET_LOG_MODE_DISABLED)
+void DeiacsEngine::setupTelemetry() {
+#if defined(CONFIG_DEIACS_LOG_MODE_DISABLED)
   esp_log_level_set("*", ESP_LOG_NONE);
-#elif defined(CONFIG_CEFET_LOG_MODE_NETWORK)
-  esp_log_set_vprintf(&CefetEngine::networkLogRoute);
+#elif defined(CONFIG_DEIACS_LOG_MODE_NETWORK)
+  esp_log_set_vprintf(&DeiacsEngine::networkLogRoute);
 #endif
 }
 
-int CefetEngine::networkLogRoute(const char *fmt, va_list args) {
+int DeiacsEngine::networkLogRoute(const char *fmt, va_list args) {
   return vprintf(fmt, args);
 }
 
-void CefetEngine::enqueueBlockEvent(IFunctionBlock* target, const std::string& port_name) {
+void DeiacsEngine::enqueueBlockEvent(IFunctionBlock* target, const std::string& port_name) {
     if (s_event_queue == nullptr || target == nullptr) return;
 
     BlockEventMsg msg;
@@ -115,20 +127,23 @@ void CefetEngine::enqueueBlockEvent(IFunctionBlock* target, const std::string& p
     msg.target_port[sizeof(msg.target_port) - 1] = '\0';
 
     if (xQueueSend(s_event_queue, &msg, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "Event Queue CHEIA! Evento %s descartado.", port_name.c_str());
+        ESP_LOGE(TAG, "Event Queue FULL! Event %s discarded.", port_name.c_str());
     }
 }
 
-void CefetEngine::dispatcherTask(void* pvParameters) {
+void DeiacsEngine::dispatcherTask(void* pvParameters) {
     BlockEventMsg msg;
     while (true) {
         if (xQueueReceive(s_event_queue, &msg, portMAX_DELAY) == pdTRUE) {
-            // Executa o Bloco Funcional de forma assincrona e isolada
+
             if (msg.target_block != nullptr) {
-                msg.target_block->triggerEventInput(msg.target_port);
+                if (xSemaphoreTake(s_mesh_mutex, portMAX_DELAY) == pdTRUE) {
+                    msg.target_block->triggerEventInput(msg.target_port);
+                    xSemaphoreGive(s_mesh_mutex);
+                }
             }
         }
     }
 }
 
-} // namespace Cefet
+} // namespace deiacs

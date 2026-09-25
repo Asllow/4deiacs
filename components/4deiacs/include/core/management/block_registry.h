@@ -7,62 +7,64 @@
 #include "i_function_block.h"
 #include "cJSON.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
- * @brief Assinatura da funcao fabrica (Factory Function).
- * Todo bloco deve prover uma funcao com esta assinatura para ser criado dinamicamente.
+ * @brief Block Factory Function Signature.
+ * Every block must provide a function with this signature to be dynamically instantiated.
  */
 using BlockFactoryFunc = std::function<IFunctionBlock*(const std::string& block_id, cJSON* config)>;
 
 /**
- * @brief Registro Central e Fabrica de Blocos.
- * * Mantem o mapeamento de tipos de blocos para construtores e rastreia
- * todas as instancias ativas na malha para permitir a desalocacao
- * segura durante o processo de Hot-Deploy.
+ * @brief Central Registry and Block Factory.
+ * 
+ * Maintains the mapping of block types to constructors and tracks
+ * all active instances in the mesh to allow safe deallocation
+ * during the Hot-Deploy process.
  */
 class BlockRegistry {
 public:
     /**
-     * @brief Registra um novo tipo de bloco no dicionario.
+     * @brief Registers a new block type in the registry.
      *
-     * @param block_type O nome do tipo (ex: "AnalogInput").
-     * @param factory A funcao que sabe instanciar este bloco.
+     * @param block_type The type name (e.g., "AnalogInput").
+     * @param factory The function capable of instantiating this block.
      */
     static void registerBlock(const std::string& block_type, BlockFactoryFunc factory);
 
     /**
-     * @brief Instancia um bloco dinamicamente baseado no seu tipo.
+     * @brief Instantiates a block dynamically based on its type.
      *
-     * @param block_type O tipo do bloco solicitado pelo JSON.
-     * @param block_id O ID unico (nome da instancia) deste bloco na rede.
-     * @param config O ponteiro para o pedaco do JSON que contem as configuracoes.
-     * @return IFunctionBlock* Ponteiro para o bloco recem-criado (ou nullptr se falhar).
+     * @param block_type The block type requested by the JSON.
+     * @param block_id The unique ID (instance name) of this block in the mesh.
+     * @param config The pointer to the JSON object containing the configurations.
+     * @return IFunctionBlock* Pointer to the newly created block (or nullptr on failure).
      */
     static IFunctionBlock* createBlock(const std::string& block_type, const std::string& block_id, cJSON* config);
 
     /**
-     * @brief Destroi todas as instancias de blocos ativas e limpa o rastreador.
-     * * Invoca o destrutor (delete) de cada bloco instanciado, garantindo a
-     * libertacao de memoria RAM e o desvinculo de perifericos e eventos.
+     * @brief Destroys all active block instances and clears the tracker.
+     * 
+     * Invokes the destructor of each instantiated block, ensuring
+     * RAM deallocation and the unbinding of peripherals and events.
      */
     static void clearAll();
 
     /**
-     * @brief Substitui a malha ativa por uma nova malha, garantindo atomicidade.
+     * @brief Replaces the active mesh with a new mesh, ensuring atomicity.
      */
     static void swapInstances(std::vector<IFunctionBlock*>& new_instances);
 
 private:
     /**
-     * @brief Singleton para proteger a ordem de inicializacao do dicionario em C++.
+     * @brief Singleton to protect the initialization order of the registry in C++.
      */
     static std::unordered_map<std::string, BlockFactoryFunc>& getRegistry();
 
     /**
-     * @brief Singleton para armazenar os ponteiros das instancias criadas na malha atual.
+     * @brief Singleton to store the pointers of instances created in the current mesh.
      */
     static std::vector<IFunctionBlock*>& getInstances();
 };
 
-} // namespace Cefet
+} // namespace deiacs

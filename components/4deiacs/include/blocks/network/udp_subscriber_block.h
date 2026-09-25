@@ -1,6 +1,6 @@
 /**
  * @file udp_subscriber_block.h
- * @brief Definicao do bloco assinante de pacotes UDP.
+ * @brief Definition of the UDP packet subscriber block.
  */
 #pragma once
 
@@ -10,11 +10,11 @@
 #include <thread>
 #include <atomic>
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @class UdpSubscriberBlock
- * @brief Bloco de rede que escuta datagramas UDP assincronamente e emite evento IND.
+ * @brief Network block that listens for UDP datagrams asynchronously and emits IND event.
  */
 class UdpSubscriberBlock : public IFunctionBlock {
 public:
@@ -42,4 +42,4 @@ private:
     void listenerTask();
 };
 
-} // namespace Cefet
+} // namespace deiacs

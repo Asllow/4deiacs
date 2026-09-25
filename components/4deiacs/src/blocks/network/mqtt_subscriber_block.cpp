@@ -1,6 +1,6 @@
 /**
  * @file mqtt_subscriber_block.cpp
- * @brief Implementacao do bloco assinante MQTT.
+ * @brief Implementation of the MQTT Subscriber block.
  */
 #include "blocks/network/mqtt_subscriber_block.h"
 #include "block_registry.h"
@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "MQTT_SUBSCRIBER_BLOCK";
 
@@ -34,7 +34,7 @@ bool MqttSubscriberBlock::initialize()
 
     m_client = esp_mqtt_client_init(&mqtt_cfg);
     if (m_client == nullptr) {
-        ESP_LOGE(TAG, "[%s] Falha ao inicializar cliente MQTT.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to initialize MQTT client.", m_id.c_str());
         return false;
     }
 
@@ -42,7 +42,7 @@ bool MqttSubscriberBlock::initialize()
     esp_mqtt_client_start(m_client);
 
     m_initialized = true;
-    ESP_LOGI(TAG, "[%s] Bloco MQTT Subscriber inicializado. Topico: %s", m_id.c_str(), m_topic.c_str());
+    ESP_LOGI(TAG, "[%s] MQTT Subscriber Block initialized. Topic: %s", m_id.c_str(), m_topic.c_str());
     return true;
 }
 
@@ -69,7 +69,7 @@ void MqttSubscriberBlock::mqttEventHandler(void* handler_args, esp_event_base_t 
     switch (static_cast<esp_mqtt_event_id_t>(event_id)) {
         case MQTT_EVENT_CONNECTED:
             esp_mqtt_client_subscribe(block->m_client, block->m_topic.c_str(), 0);
-            ESP_LOGI(TAG, "[%s] Conectado e inscrito: %s", block->m_id.c_str(), block->m_topic.c_str());
+            ESP_LOGI(TAG, "[%s] Connected and subscribed: %s", block->m_id.c_str(), block->m_topic.c_str());
             break;
             
         case MQTT_EVENT_DATA:
@@ -105,11 +105,11 @@ IFunctionBlock* MqttSubscriberBlock::create(const std::string& block_id, cJSON* 
 }
 
 /**
- * @brief Registo estatico na Factory.
+ * @brief Static registration in the Factory.
  */
 static bool registered = []() {
     BlockRegistry::registerBlock("MqttSubscriber", MqttSubscriberBlock::create);
     return true;
 }();
 
-} // namespace Cefet
+} // namespace deiacs

@@ -1,12 +1,12 @@
 /**
  * @file pwm_output_block.cpp
- * @brief Implementacao do bloco PWM Output aderente a norma IEC 61499.
+ * @brief Implementation of the PWM Output block compliant with IEC 61499.
  */
 #include "blocks/io/pwm_output_block.h"
 #include "block_registry.h"
 #include "esp_log.h"
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "PWM_OUTPUT_BLOCK";
 
@@ -20,6 +20,7 @@ PwmOutputBlock::PwmOutputBlock(const std::string& block_id, int gpio_num, ledc_t
 PwmOutputBlock::~PwmOutputBlock()
 {
     ledc_stop(LEDC_LOW_SPEED_MODE, m_channel_num, 0);
+    ledc_timer_rst(LEDC_LOW_SPEED_MODE, m_timer_num);
 }
 
 bool PwmOutputBlock::initialize()
@@ -125,4 +126,4 @@ static bool registered = []() {
     return true;
 }();
 
-} // namespace Cefet
+} // namespace deiacs

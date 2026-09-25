@@ -1,6 +1,6 @@
 /**
  * @file serial_monitor_block.h
- * @brief Bloco de Monitorizacao Serial Generico.
+ * @brief Generic Serial Monitor Block.
  */
 #pragma once
 
@@ -9,14 +9,14 @@
 #include "i_function_block.h"
 #include "cJSON.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @brief Serial Monitor Service Interface Function Block.
  *
- * Recolhe os dados de multiplos ponteiros float e imprime-os no 
- * barramento UART (terminal serial) do ESP32 a cada ciclo de execucao.
- * Essencial para depuracao de malhas sem a necessidade de clientes Modbus.
+ * Collects data from multiple float pointers and prints them to the 
+ * ESP32 UART bus (serial terminal) on every execution cycle.
+ * Essential for mesh debugging without the need for Modbus clients.
  */
 class SerialMonitorBlock : public IFunctionBlock {
 public:
@@ -37,4 +37,4 @@ private:
     std::vector<float*> m_inputs;
 };
 
-} /* namespace Cefet */
+} /* namespace deiacs */

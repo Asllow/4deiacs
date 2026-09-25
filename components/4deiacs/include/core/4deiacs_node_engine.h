@@ -1,73 +1,74 @@
 #pragma once
 
 #include "esp_err.h"
-#include "cefet_events.h"
+#include "deiacs_events.h"
 #include <cstdarg>
 #include <string>
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
-namespace Cefet {
+namespace deiacs {
 
 class IFunctionBlock;
 
 /**
- * @brief Motor Principal e Orquestrador do Framework 4deacis.
+ * @brief Main Engine and Orchestrator of the 4deiacs Framework.
  *
- * Atua como o "Maestro" do sistema de borda. Mantem a responsabilidade de
- * instanciar e gerir o barramento de eventos (Event Loop nativo) e coordena
- * os subsistemas delegados (SPIFFS, JSON, Registry) para executar o 
- * Hot-Deploy seguro da malha de controlo em tempo real.
+ * Acts as the "Maestro" of the edge system. Holds the responsibility of
+ * instantiating and managing the event bus (native Event Loop) and coordinates
+ * the delegated subsystems (SPIFFS, JSON, Registry) to perform safe Hot-Deploy
+ * of the real-time control mesh.
  */
-class CefetEngine {
+class DeiacsEngine {
 public:
     /**
-     * @brief Inicializa o barramento de eventos do FreeRTOS e a telemetria.
+     * @brief Initializes the FreeRTOS event bus and telemetry.
      *
-     * @return esp_err_t ESP_OK se o motor arrancou com sucesso.
+     * @return esp_err_t ESP_OK if the engine started successfully.
      */
     static esp_err_t start();
 
     /**
-     * @brief Publica um evento no barramento interno de controlo (IEC 61499).
+     * @brief Publishes an event to the internal control bus (IEC 61499).
      *
-     * @param event_id ID do evento a ser disparado.
-     * @param event_data Ponteiro opcional para transporte de dados.
-     * @param event_data_size Tamanho do payload de dados em bytes.
-     * @return esp_err_t ESP_OK em caso de sucesso no enfileiramento.
+     * @param event_id ID of the event to be triggered.
+     * @param event_data Optional pointer for data transport.
+     * @param event_data_size Size of the data payload in bytes.
+     * @return esp_err_t ESP_OK on successful enqueue.
      */
     static esp_err_t postEvent(EventIds event_id, void* event_data = nullptr, size_t event_data_size = 0);
 
     /**
-     * @brief Regista a escuta de um evento para um Bloco de Funcao.
+     * @brief Registers an event listener for a Function Block.
      *
-     * @param event_id O ID do evento a ser monitorizado.
-     * @param event_handler A funcao callback a ser executada.
-     * @param event_handler_arg Ponteiro de contexto (normalmente a instancia 'this' do bloco).
-     * @return esp_err_t ESP_OK se a subscricao foi efetivada.
+     * @param event_id The ID of the event to be monitored.
+     * @param event_handler The callback function to be executed.
+     * @param event_handler_arg Context pointer (usually the 'this' instance of the block).
+     * @return esp_err_t ESP_OK if the subscription was successful.
      */
     static esp_err_t subscribeEvent(EventIds event_id, esp_event_handler_t event_handler, void* event_handler_arg);
 
     /**
-     * @brief Desaloca a malha atual de forma segura para libertacao de RAM.
+     * @brief Safely deallocates the current mesh to free up RAM.
      *
-     * Interrompe todos os blocos em execucao, remove os seus registos no loop
-     * de eventos nativo e liberta a memoria alocada (SRAM e PSRAM).
+     * Stops all running blocks, removes their registrations from the native
+     * event loop, and frees the allocated memory (SRAM and PSRAM).
      */
     static void clearMesh();
 
     /**
-     * @brief Recarrega a malha de controlo a partir de um manifesto JSON em rede.
+     * @brief Reloads the control mesh from a networked JSON manifest.
      *
-     * @param json_manifest String na PSRAM contendo o payload de deploy.
-     * @return esp_err_t ESP_OK se a malha foi montada e iniciada.
+     * @param json_manifest String in PSRAM containing the deployment payload.
+     * @return esp_err_t ESP_OK if the mesh was successfully assembled and started.
      */
     static esp_err_t reloadMesh(const char* json_manifest);
 
     /**
-     * @brief Enfileira um evento para execucao assincrona na Task do Dispatcher.
-     * Quebra o acoplamento sincrono (depth-first) resolvendo a violacao IEC 61499.
+     * @brief Enqueues an event for asynchronous execution in the Dispatcher Task.
+     * Breaks the synchronous (depth-first) coupling, resolving the IEC 61499 violation.
      */
     static void enqueueBlockEvent(IFunctionBlock* target, const std::string& port_name);
 
@@ -76,7 +77,8 @@ private:
     static int networkLogRoute(const char* fmt, va_list args);
 
     static QueueHandle_t s_event_queue;
+    static SemaphoreHandle_t s_mesh_mutex;
     static void dispatcherTask(void* pvParameters);
 };
 
-} // namespace Cefet
+} // namespace deiacs

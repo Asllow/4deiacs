@@ -1,6 +1,6 @@
 /**
  * @file state_space_block.h
- * @brief Bloco Controlador de Espaco de Estados (LQR) Multivariavel.
+ * @brief Multivariable State Space (LQR) Controller Block.
  */
 #pragma once
 
@@ -9,25 +9,25 @@
 #include "i_function_block.h"
 #include "cJSON.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @brief State Space Control Service Interface Function Block (SIFB).
  *
- * Calcula a lei de controlo U = -K * X em tempo real.
- * A matriz de ganhos K e definida no manifesto JSON, permitindo que
- * o bloco se adapte dinamicamente a sistemas SISO (1x1) ou MIMO (MxN)
- * sem necessidade de recompilacao do firmware.
- * * Portas geradas dinamicamente:
- * - Entradas: X_0, X_1, ..., X_n (Ponteiros para os estados atuais)
- * - Saidas: U_0, U_1, ..., U_m (Sinais de atuacao calculados)
+ * Calculates the control law U = -K * X in real-time.
+ * The gain matrix K is defined in the JSON manifest, allowing
+ * the block to dynamically adapt to SISO (1x1) or MIMO (MxN) systems
+ * without the need to recompile the firmware.
+ * * Dynamically generated ports:
+ * - Inputs: X_0, X_1, ..., X_n (Pointers to current states)
+ * - Outputs: U_0, U_1, ..., U_m (Calculated actuation signals)
  */
 class StateSpaceBlock : public IFunctionBlock {
 public:
     /**
-     * @brief Construtor com alocacao de matriz dinamica.
-     * @param block_id Identificador unico do bloco.
-     * @param k_matrix Matriz de ganhos K [linhas(U) x colunas(X)].
+     * @brief Constructor with dynamic matrix allocation.
+     * @param block_id Unique block identifier.
+     * @param k_matrix Gain matrix K [rows(U) x cols(X)].
      */
     StateSpaceBlock(const std::string& block_id, const std::vector<std::vector<float>>& k_matrix);
     
@@ -45,16 +45,16 @@ public:
 private:
     std::string m_id;
     
-    /* Matriz de ganhos do controlador (K) */
+    /* Controller gain matrix (K) */
     std::vector<std::vector<float>> m_K;
     
-    /* Dimensoes descobertas automaticamente a partir do JSON */
-    size_t m_num_states;  /* Numero de colunas de K (Vetor X) */
-    size_t m_num_outputs; /* Numero de linhas de K (Vetor U) */
+    /* Dimensions automatically discovered from JSON */
+    size_t m_num_states;  /* Number of columns in K (Vector X) */
+    size_t m_num_outputs; /* Number of rows in K (Vector U) */
 
-    /* Arrays dinamicos de E/S tipados em float (Solid / Polimorfismo) */
+    /* Dynamic float typed I/O arrays (Solid / Polymorphism) */
     std::vector<float*> m_x_in; 
     std::vector<float> m_u_out; 
 };
 
-} /* namespace Cefet */
+} /* namespace deiacs */

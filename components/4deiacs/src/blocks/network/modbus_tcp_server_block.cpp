@@ -1,6 +1,6 @@
 /**
  * @file modbus_tcp_server_block.cpp
- * @brief Implementacao do Servidor Modbus TCP Dinamico.
+ * @brief Implementation of the Dynamic Modbus TCP Server.
  */
 #include "modbus_tcp_server_block.h"
 #include "block_registry.h"
@@ -9,7 +9,7 @@
 #include <cstring>
 #include <cmath>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "MODBUS_GENERICO";
 
@@ -60,7 +60,7 @@ bool ModbusTcpServerBlock::initialize()
         return false;
     }
     
-    ESP_LOGI(TAG, "[%s] Servidor Modbus Iniciado: Porta %d | Entradas: %d | Saidas: %d", 
+    ESP_LOGI(TAG, "[%s] Modbus Server Started: Port %d | Inputs: %d | Outputs: %d", 
              m_id.c_str(), m_port, m_num_in, m_num_out);
     return true;
 }
@@ -131,7 +131,7 @@ void ModbusTcpServerBlock::serverTask(void* arg)
         if (sock < 0) {
             continue;
         }
-        ESP_LOGI(TAG, "Mestre Modbus Conectado.");
+        ESP_LOGI(TAG, "Modbus Master Connected.");
 
         while (1) {
             uint8_t rx[256];
@@ -174,7 +174,7 @@ void ModbusTcpServerBlock::serverTask(void* arg)
             }
         }
         close(sock);
-        ESP_LOGI(TAG, "Mestre Modbus Desconectado.");
+        ESP_LOGI(TAG, "Modbus Master Disconnected.");
     }
 }
 
@@ -209,4 +209,4 @@ static bool registered = []() {
     return true;
 }();
 
-} /* namespace Cefet */
+} /* namespace deiacs */

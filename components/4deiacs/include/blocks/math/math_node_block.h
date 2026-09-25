@@ -1,6 +1,6 @@
 /**
  * @file math_node_block.h
- * @brief Cabecalho do Bloco Matematico Generico.
+ * @brief Generic Math Block header.
  */
 #pragma once
 
@@ -9,12 +9,13 @@
 #include "cJSON.h"
 #include "tinyexpr.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
- * @brief Bloco Matematico Generico (MathNodeBlock).
- * * Capaz de processar equacoes matematicas em tempo real utilizando a TinyExpr.
- * Opera exclusivamente com ponteiros float garantindo o desacoplamento.
+ * @brief Generic Math Block (MathNodeBlock).
+ * 
+ * Capable of processing mathematical equations in real time using TinyExpr.
+ * Operates exclusively with float pointers ensuring decoupling.
  */
 class MathNodeBlock : public IFunctionBlock {
 public:
@@ -35,17 +36,17 @@ private:
     std::string m_expression;
     te_expr* m_compiled_expr;
 
-    /* Entradas tipadas para manter a coesao de memoria */
+    /* Typed inputs to maintain memory cohesion */
     float* m_in_a;
     float* m_in_b;
     float* m_in_c;
     float* m_in_d;
 
-    /* Variaveis internas exigidas pelo parser C */
+    /* Internal variables required by the C parser */
     double m_val_a, m_val_b, m_val_c, m_val_d;
 
-    /* Variavel de saida encapsulada */
+    /* Encapsulated output variable */
     float m_out;
 };
 
-} /* namespace Cefet */
+} /* namespace deiacs */

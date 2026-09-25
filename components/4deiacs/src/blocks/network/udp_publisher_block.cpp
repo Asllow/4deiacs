@@ -3,7 +3,7 @@
 #include "esp_log.h"
 #include <cstring>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "UDP_PUB_BLOCK";
 
@@ -56,13 +56,13 @@ bool UdpPublisherBlock::publish(const std::string& payload)
 }
 
 // =========================================================================
-// IMPLEMENTACAO DAS PORTAS IEC 61499
+// IEC 61499 PORTS IMPLEMENTATION
 // =========================================================================
 
 bool UdpPublisherBlock::connectDataInput(const std::string& port_name, void* data_pointer)
 {
     if (port_name == "PAYLOAD_IN") {
-        // Recebe a "ponta do fio" do bloco anterior e pluga na nossa variavel
+
         m_payload_in = static_cast<float*>(data_pointer);
         return true;
     }
@@ -73,10 +73,10 @@ void UdpPublisherBlock::triggerEventInput(const std::string& event_name)
 {
     if (event_name == "SEND") {
         if (m_payload_in != nullptr) {
-            // Acessa o espaco de memoria alheio, converte e dispara para a rede
+
             publish(std::to_string(*m_payload_in));
         } else {
-            ESP_LOGE(TAG, "[%s] Tentativa de SEND, mas a porta PAYLOAD_IN esta desconectada!", m_id.c_str());
+            ESP_LOGE(TAG, "[%s] SEND attempt, but PAYLOAD_IN port is disconnected!", m_id.c_str());
         }
     }
 }
@@ -85,8 +85,8 @@ void UdpPublisherBlock::triggerEventInput(const std::string& event_name)
 
 IFunctionBlock* UdpPublisherBlock::create(const std::string& block_id, cJSON* config)
 {
-    std::string ip = "255.255.255.255"; // Default: Broadcast
-    uint16_t port = 5000;               // Default port
+    std::string ip = "255.255.255.255";
+    uint16_t port = 5000;
 
     if (config != nullptr) {
         cJSON* ip_item = cJSON_GetObjectItem(config, "target_ip");
@@ -112,4 +112,4 @@ static bool registered = []() {
     return true;
 }();
 
-} // namespace Cefet
+} // namespace deiacs

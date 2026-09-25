@@ -5,30 +5,30 @@
 #include "i_function_block.h"
 #include "cJSON.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
- * @brief Gerenciador de Roteamento IEC 61499 (Connection Manager).
+ * @brief IEC 61499 Routing Manager (Connection Manager).
  *
- * Responsavel por estabelecer as pontes fisicas de memoria entre os blocos.
- * Cria conexoes de Dados (compartilhamento de ponteiros) e rotas de 
- * Eventos (chamadas de execucao em cascata).
+ * Responsible for establishing the physical memory bridges between blocks.
+ * Creates Data connections (pointer sharing) and Event routes 
+ * (cascading execution calls).
  */
 class ConnectionManager {
 public:
     /**
-     * @brief Executa o roteamento fisico na memoria do microcontrolador.
+     * @brief Executes the physical routing in the microcontroller's memory.
      *
-     * @param conns_array Ponteiro para o array JSON de conexoes ja parseado.
-     * @param blocks A lista de blocos ja instanciados pela Factory.
-     * @return true Se o roteamento foi processado com sucesso.
+     * @param conns_array Pointer to the parsed JSON connections array.
+     * @param blocks The list of blocks already instantiated by the Factory.
+     * @return true If the routing was processed successfully.
      */
     static bool wireConnections(cJSON* conns_array, const std::vector<IFunctionBlock*>& blocks);
 
     /**
-     * @brief Limpa as rotas de rede (Metodo mantido para padronizacao).
+     * @brief Clears network routes (Method kept for standardization).
      */
     static void clearAll();
 };
 
-} // namespace Cefet
+} // namespace deiacs

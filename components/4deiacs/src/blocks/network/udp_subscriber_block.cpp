@@ -1,6 +1,6 @@
 /**
  * @file udp_subscriber_block.cpp
- * @brief Implementacao do bloco assinante UDP.
+ * @brief Implementation of the UDP Subscriber block.
  */
 #include "blocks/network/udp_subscriber_block.h"
 #include "block_registry.h"
@@ -8,7 +8,7 @@
 #include <lwip/sockets.h>
 #include <cstdlib>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "UDP_SUBSCRIBER_BLOCK";
 
@@ -40,12 +40,12 @@ bool UdpSubscriberBlock::initialize()
 
     m_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (m_sock < 0) {
-        ESP_LOGE(TAG, "[%s] Falha ao criar socket UDP.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to create UDP socket.", m_id.c_str());
         return false;
     }
 
     if (bind(m_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
-        ESP_LOGE(TAG, "[%s] Falha ao fazer bind na porta %d.", m_id.c_str(), m_port);
+        ESP_LOGE(TAG, "[%s] Failed to bind to port %d.", m_id.c_str(), m_port);
         close(m_sock);
         m_sock = -1;
         return false;
@@ -55,7 +55,7 @@ bool UdpSubscriberBlock::initialize()
     m_listener_thread = std::thread(&UdpSubscriberBlock::listenerTask, this);
 
     m_initialized = true;
-    ESP_LOGI(TAG, "[%s] Bloco UDP inicializado, escutando porta %d.", m_id.c_str(), m_port);
+    ESP_LOGI(TAG, "[%s] UDP Block initialized, listening on port %d.", m_id.c_str(), m_port);
     return true;
 }
 
@@ -69,7 +69,7 @@ void* UdpSubscriberBlock::getDataOutput(const std::string& port_name)
 
 void UdpSubscriberBlock::triggerEventInput(const std::string& event_name)
 {
-    // Subscriber gera eventos (IND), normalmente nao os recebe para processamento.
+
     if (!m_initialized && event_name == "INIT") {
         initialize();
     }
@@ -86,11 +86,11 @@ void UdpSubscriberBlock::listenerTask()
         
         if (len > 0) {
             rx_buffer[len] = '\0';
-            // Atualiza a variavel apontada pelo motor e dispara o evento assincronamente
+
             m_data_out = std::strtof(rx_buffer, nullptr);
             emitEvent("IND");
         } else if (len < 0 && m_is_running) {
-            // Em caso de falha silenciosa de rede, previne loop infinito de alto consumo
+
             vTaskDelay(pdMS_TO_TICKS(50)); 
         }
     }
@@ -109,11 +109,11 @@ IFunctionBlock* UdpSubscriberBlock::create(const std::string& block_id, cJSON* c
 }
 
 /**
- * @brief Registo estatico na Factory.
+ * @brief Static registration in the Factory.
  */
 static bool registered = []() {
     BlockRegistry::registerBlock("UdpSubscriber", UdpSubscriberBlock::create);
     return true;
 }();
 
-} // namespace Cefet
+} // namespace deiacs

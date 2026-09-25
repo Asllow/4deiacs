@@ -1,14 +1,13 @@
 /**
  * @file modbus_tcp_client_block.cpp
- * @brief Implementacao do bloco Modbus TCP Client.
+ * @brief Implementation of the Modbus TCP Client block.
  */
 #include "blocks/network/modbus_tcp_client_block.h"
 #include "block_registry.h"
 #include "esp_log.h"
 #include <lwip/sockets.h>
-#include <cstring>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "MODBUS_TCP_CLIENT_BLOCK";
 
@@ -76,7 +75,7 @@ bool ModbusTcpClientBlock::connectToServer()
 
     m_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if (m_sock < 0) {
-        ESP_LOGE(TAG, "[%s] Falha ao criar socket TCP.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to create TCP socket.", m_id.c_str());
         return false;
     }
 
@@ -87,12 +86,12 @@ bool ModbusTcpClientBlock::connectToServer()
     setsockopt(m_sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 
     if (connect(m_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) != 0) {
-        ESP_LOGW(TAG, "[%s] Falha ao conectar no servidor Modbus %s:%d.", m_id.c_str(), m_target_ip.c_str(), m_port);
+        ESP_LOGW(TAG, "[%s] Failed to connect to Modbus server %s:%d.", m_id.c_str(), m_target_ip.c_str(), m_port);
         disconnect();
         return false;
     }
 
-    ESP_LOGI(TAG, "[%s] Conectado ao servidor Modbus %s:%d", m_id.c_str(), m_target_ip.c_str(), m_port);
+    ESP_LOGI(TAG, "[%s] Connected to Modbus server %s:%d", m_id.c_str(), m_target_ip.c_str(), m_port);
     return true;
 }
 
@@ -161,11 +160,11 @@ IFunctionBlock* ModbusTcpClientBlock::create(const std::string& block_id, cJSON*
 }
 
 /**
- * @brief Registo estatico na Factory.
+ * @brief Static registration in the Factory.
  */
 static bool registered = []() {
     BlockRegistry::registerBlock("ModbusTcpClient", ModbusTcpClientBlock::create);
     return true;
 }();
 
-} // namespace Cefet
+} // namespace deiacs

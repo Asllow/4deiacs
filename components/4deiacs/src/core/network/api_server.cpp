@@ -4,17 +4,16 @@
 #include "cJSON.h"
 #include "spiffs_manager.h"
 #include "4deiacs_node_engine.h"
-#include "network_manager.h"
 #include "mdns.h"
 #include <string>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "API_SERVER";
 httpd_handle_t ApiServer::server_handle = nullptr;
 
 // =========================================================================
-// HANDLER DA ROTA DE DEPLOY DE MALHA (/deploy)
+// MESH DEPLOY ROUTE HANDLER (/deploy)
 // =========================================================================
 esp_err_t ApiServer::deployHandler(httpd_req_t *req)
 {
@@ -25,7 +24,7 @@ esp_err_t ApiServer::deployHandler(httpd_req_t *req)
 
     char* json_buf = static_cast<char*>(heap_caps_malloc(req->content_len + 1, MALLOC_CAP_SPIRAM));
     if (json_buf == nullptr) {
-        ESP_LOGE(TAG, "Falha de alocacao na PSRAM para o payload JSON");
+        ESP_LOGE(TAG, "Failed to allocate PSRAM for JSON payload");
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memoria PSRAM insuficiente");
         return ESP_FAIL;
     }
@@ -49,7 +48,7 @@ esp_err_t ApiServer::deployHandler(httpd_req_t *req)
 
     cJSON* root = cJSON_Parse(json_buf);
     if (root == nullptr) {
-        ESP_LOGE(TAG, "Falha no parse do JSON. Payload ignorado.");
+        ESP_LOGE(TAG, "JSON parse failed. Payload ignored.");
         httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Sintaxe JSON invalida");
         heap_caps_free(json_buf);
         return ESP_FAIL;
@@ -64,11 +63,11 @@ esp_err_t ApiServer::deployHandler(httpd_req_t *req)
         return ESP_FAIL;
     }
 
-    CefetEngine::reloadMesh(json_buf);
+    DeiacsEngine::reloadMesh(json_buf);
 
     heap_caps_free(json_buf);
 
-    const char* resp = "{\"status\":\"deployed\",\"message\":\"Malha injetada e persistida com sucesso\"}";
+    const char* resp = "{\"status\":\"deployed\",\"message\":\"Mesh injected and persisted successfully\"}";
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
 
@@ -76,7 +75,7 @@ esp_err_t ApiServer::deployHandler(httpd_req_t *req)
 }
 
 // =========================================================================
-// HANDLER DA ROTA DE PROVISIONAMENTO (/provision)
+// PROVISIONING ROUTE HANDLER (/provision)
 // =========================================================================
 esp_err_t ApiServer::provisionHandler(httpd_req_t *req)
 {
@@ -88,7 +87,7 @@ esp_err_t ApiServer::provisionHandler(httpd_req_t *req)
         return ESP_FAIL;
     }
 
-    // Le a string do payload
+
     int ret = httpd_req_recv(req, buf, remaining);
     if (ret <= 0) {
         if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
@@ -108,22 +107,22 @@ esp_err_t ApiServer::provisionHandler(httpd_req_t *req)
     if (cJSON_IsString(name_item) && (name_item->valuestring != nullptr)) {
         
         std::string novo_nome = name_item->valuestring;
-        ESP_LOGI(TAG, "Pedido de Provisionamento recebido. Novo hostname: %s", novo_nome.c_str());
+        ESP_LOGI(TAG, "Provisioning Request received. New hostname: %s", novo_nome.c_str());
 
-        // 1. Salva fisicamente na Flash (para sobreviver a reboots)
+
         FILE* f = fopen("/spiffs/device.json", "w");
         if (f) {
             fprintf(f, "{\"name\":\"%s\"}", novo_nome.c_str());
             fclose(f);
         } else {
-            ESP_LOGE(TAG, "Falha ao abrir /spiffs/device.json para escrita.");
+            ESP_LOGE(TAG, "Failed to open /spiffs/device.json for writing.");
         }
 
-        // 2. Altera dinamicamente o mDNS na hora
+
         mdns_hostname_set(novo_nome.c_str());
         mdns_instance_name_set(novo_nome.c_str());
 
-        // Responde de volta a WebIDE
+
         const char* resp_str = "{\"status\":\"provisioned\"}";
         httpd_resp_set_type(req, "application/json");
         httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
@@ -137,7 +136,7 @@ esp_err_t ApiServer::provisionHandler(httpd_req_t *req)
 }
 
 // =========================================================================
-// CONTROLE DO SERVIDOR
+// SERVER CONTROL
 // =========================================================================
 esp_err_t ApiServer::start()
 {
@@ -150,11 +149,11 @@ esp_err_t ApiServer::start()
     config.max_req_hdr_len = 1024;
     config.core_id = 0; 
     
-    ESP_LOGI(TAG, "A iniciar servidor HTTP na porta %d", config.server_port);
+    ESP_LOGI(TAG, "Starting HTTP server on port %d", config.server_port);
 
     if (httpd_start(&server_handle, &config) == ESP_OK) {
         
-        // Rota 1: Injeção da Malha de Controle
+
         httpd_uri_t uri_deploy = {
             .uri       = "/deploy",
             .method    = HTTP_POST,
@@ -163,7 +162,7 @@ esp_err_t ApiServer::start()
         };
         httpd_register_uri_handler(server_handle, &uri_deploy);
         
-        // Rota 2: Renomear a placa na Rede
+
         httpd_uri_t uri_provision = {
             .uri       = "/provision",
             .method    = HTTP_POST,
@@ -175,7 +174,7 @@ esp_err_t ApiServer::start()
         return ESP_OK;
     }
 
-    ESP_LOGE(TAG, "Falha ao iniciar o servidor HTTP");
+    ESP_LOGE(TAG, "Failed to start HTTP server");
     return ESP_FAIL;
 }
 
@@ -184,8 +183,8 @@ void ApiServer::stop()
     if (server_handle != nullptr) {
         httpd_stop(server_handle);
         server_handle = nullptr;
-        ESP_LOGI(TAG, "Servidor HTTP parado");
+        ESP_LOGI(TAG, "HTTP server stopped");
     }
 }
 
-} // namespace Cefet
+} // namespace deiacs

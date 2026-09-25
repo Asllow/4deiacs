@@ -3,28 +3,28 @@
 #include "esp_err.h"
 #include "esp_http_server.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
- * @brief Servidor HTTP nativo integrado ao LwIP para gerenciamento da malha.
+ * @brief Native HTTP server integrated with LwIP for mesh management.
  *
- * Expõe endpoints RESTful permitindo que a interface gráfica (IDE) interaja
- * com o hardware de forma padronizada. Opera em uma Task isolada do FreeRTOS
- * com prioridade reduzida para não interromper o ciclo de controle de tempo real.
+ * Exposes RESTful endpoints allowing the Graphical User Interface (IDE) to interact
+ * with the hardware in a standardized way. Runs in an isolated FreeRTOS Task
+ * with reduced priority to avoid interrupting the real-time control cycle.
  */
 class ApiServer {
 public:
     /**
-     * @brief Inicializa e arranca o daemon do servidor HTTP na porta 80.
+     * @brief Initializes and starts the HTTP server daemon on port 80.
      *
-     * Regista as rotas (URIs) necessarias para o provisionamento e o deploy.
+     * Registers the necessary routes (URIs) for provisioning and deployment.
      *
-     * @return esp_err_t ESP_OK em caso de sucesso.
+     * @return esp_err_t ESP_OK on success.
      */
     static esp_err_t start();
 
     /**
-     * @brief Encerra o servidor HTTP e liberta os recursos de rede.
+     * @brief Stops the HTTP server and frees network resources.
      */
     static void stop();
 
@@ -32,16 +32,16 @@ private:
     static httpd_handle_t server_handle;
 
     /**
-     * @brief Callback (Handler) para a rota POST /deploy.
+     * @brief Callback (Handler) for the POST /deploy route.
      *
-     * Aloca o payload JSON iterativamente na PSRAM, realiza a validacao sintatica,
-     * aciona a persistencia via SpiffsManager e dispara o recarregamento do motor.
+     * Iteratively allocates the JSON payload in PSRAM, performs syntactic validation,
+     * triggers persistence via SpiffsManager, and initiates engine reload.
      *
-     * @param req Estrutura da requisicao HTTP atual.
-     * @return esp_err_t ESP_OK se o fluxo for concluido.
+     * @param req Current HTTP request structure.
+     * @return esp_err_t ESP_OK if the flow completes.
      */
     static esp_err_t deployHandler(httpd_req_t *req);
     static esp_err_t provisionHandler(httpd_req_t *req);
 };
 
-} // namespace Cefet
+} // namespace deiacs

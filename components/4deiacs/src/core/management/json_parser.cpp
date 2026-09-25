@@ -5,21 +5,21 @@
 #include "esp_log.h"
 #include <vector>
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "JSON_PARSER";
 
 esp_err_t JsonParser::parseManifest(const char* json_payload, std::vector<IFunctionBlock*>& out_instances)
 {
     if (json_payload == nullptr) {
-        ESP_LOGE(TAG, "Payload nulo fornecido ao parser.");
+        ESP_LOGE(TAG, "Null payload provided to parser.");
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "A iniciar Parsing do Manifesto JSON...");
+    ESP_LOGI(TAG, "Starting JSON Manifest Parsing...");
     cJSON* root = cJSON_Parse(json_payload);
     if (root == nullptr) {
-        ESP_LOGE(TAG, "Falha na conversao do JSON. Sintaxe invalida.");
+        ESP_LOGE(TAG, "JSON conversion failed. Invalid syntax.");
         return ESP_FAIL;
     }
 
@@ -37,7 +37,7 @@ esp_err_t JsonParser::parseManifest(const char* json_payload, std::vector<IFunct
                 std::string block_id = id_obj->valuestring;
                 std::string block_type = type_obj->valuestring;
 
-                ESP_LOGD(TAG, "A instanciar bloco: [%s] do tipo <%s>", block_id.c_str(), block_type.c_str());
+                ESP_LOGD(TAG, "Instantiating block: [%s] of type <%s>", block_id.c_str(), block_type.c_str());
 
                 IFunctionBlock* new_block = BlockRegistry::createBlock(block_type, block_id, config_obj);
                 
@@ -45,14 +45,14 @@ esp_err_t JsonParser::parseManifest(const char* json_payload, std::vector<IFunct
                     if (new_block->initialize()) {
                         out_instances.push_back(new_block);
                     } else {
-                        ESP_LOGE(TAG, "Falha de inicializacao no bloco [%s]. A abortar instancia.", block_id.c_str());
+                        ESP_LOGE(TAG, "Initialization failure in block [%s]. Aborting instance.", block_id.c_str());
                         delete new_block;
                     }
                 }
             }
         }
     } else {
-        ESP_LOGW(TAG, "O manifesto nao contem um array 'blocks' valido.");
+        ESP_LOGW(TAG, "Manifest does not contain a valid 'blocks' array.");
     }
     cJSON* conns_array = cJSON_GetObjectItem(root, "connections");
     bool wiring_success = false;
@@ -60,19 +60,19 @@ esp_err_t JsonParser::parseManifest(const char* json_payload, std::vector<IFunct
     if (cJSON_IsArray(conns_array)) {
         wiring_success = ConnectionManager::wireConnections(conns_array, out_instances);
     } else {
-        ESP_LOGW(TAG, "Nenhuma conexao encontrada no manifesto.");
+        ESP_LOGW(TAG, "No connections found in manifest.");
     }
     cJSON_Delete(root);
 
     if (!wiring_success && cJSON_IsArray(conns_array)) {
-        ESP_LOGE(TAG, "Falha critica durante o roteamento. A malha pode estar inconsistente.");
+        ESP_LOGE(TAG, "Critical failure during routing. Mesh may be inconsistent.");
         for (auto* b : out_instances) { delete b; }
         out_instances.clear();
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Parsing e Construcao concluidos com sucesso (%d blocos ativos).", out_instances.size());
+    ESP_LOGI(TAG, "Parsing and Construction completed successfully (%d active blocks).", out_instances.size());
     return ESP_OK;
 }
 
-} // namespace Cefet
+} // namespace deiacs

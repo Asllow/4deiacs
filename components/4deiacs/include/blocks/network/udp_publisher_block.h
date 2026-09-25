@@ -5,7 +5,7 @@
 #include "lwip/sockets.h"
 #include "cJSON.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @brief UDP Peer-to-Peer Publisher Service Interface Function Block (CSIFB).
@@ -53,16 +53,16 @@ public:
     bool publish(const std::string& payload);
 
     // =========================================================================
-    // PORTAS IEC 61499
+    // IEC 61499 PORTS
     // =========================================================================
 
     /**
-     * @brief Recebe o ponteiro de outro bloco para a porta "PAYLOAD_IN".
+     * @brief Receives a pointer from another block for the "PAYLOAD_IN" port.
      */
     bool connectDataInput(const std::string& port_name, void* data_pointer) override;
 
     /**
-     * @brief Executa o disparo da mensagem ao receber o evento "SEND".
+     * @brief Triggers the message upon receiving the "SEND" event.
      */
     void triggerEventInput(const std::string& event_name) override;
 
@@ -82,8 +82,8 @@ private:
     int m_socket;
     struct sockaddr_in m_dest_addr;
 
-    /** @brief Fio de Cobre virtual: aponta para a memoria de saida de outro bloco */
+    /** @brief Virtual Copper Wire: points to another block's output memory */
     float* m_payload_in; 
 };
 
-} // namespace Cefet
+} // namespace deiacs

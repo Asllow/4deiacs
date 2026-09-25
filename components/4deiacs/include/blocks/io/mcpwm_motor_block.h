@@ -5,7 +5,7 @@
 #include "driver/mcpwm_prelude.h"
 #include "cJSON.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @brief DC Motor Control Service Interface Function Block (SIFB).
@@ -78,4 +78,4 @@ private:
     mcpwm_gen_handle_t m_gen_b;
 };
 
-} // namespace Cefet
+} // namespace deiacs

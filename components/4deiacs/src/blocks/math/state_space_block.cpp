@@ -1,12 +1,12 @@
 /**
  * @file state_space_block.cpp
- * @brief Implementacao da algebra linear do Espaco de Estados.
+ * @brief Implementation of the State Space linear algebra.
  */
 #include "state_space_block.h"
 #include "block_registry.h"
 #include "esp_log.h"
 
-namespace Cefet {
+namespace deiacs {
 
 static const char* TAG = "STATE_SPACE";
 
@@ -31,11 +31,11 @@ StateSpaceBlock::~StateSpaceBlock()
 bool StateSpaceBlock::initialize()
 {
     if (m_num_outputs == 0 || m_num_states == 0) {
-        ESP_LOGE(TAG, "[%s] Matriz K invalida ou vazia.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Invalid or empty K matrix.", m_id.c_str());
         return false;
     }
 
-    ESP_LOGI(TAG, "[%s] Inicializado. Entradas(X): %d | Saidas(U): %d", 
+    ESP_LOGI(TAG, "[%s] Initialized. Inputs(X): %d | Outputs(U): %d", 
              m_id.c_str(), m_num_states, m_num_outputs);
     return true;
 }
@@ -87,7 +87,7 @@ void StateSpaceBlock::triggerEventInput(const std::string& event_name)
             float sum = 0.0f;
             
             for (size_t j = 0; j < m_num_states; ++j) {
-                /* Confirma se o ponteiro da malha foi devidamente ligado no JSON */
+                /* Confirms if the mesh pointer was properly linked in the JSON */
                 float x_val = (m_x_in[j] != nullptr) ? *(m_x_in[j]) : 0.0f;
                 sum += m_K[i][j] * x_val;
             }
@@ -146,4 +146,4 @@ static bool registered = []() {
     return true;
 }();
 
-} /* namespace Cefet */
+} /* namespace deiacs */

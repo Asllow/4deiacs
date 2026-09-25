@@ -1,7 +1,7 @@
 /**
  * @file pwm_output_block.h
- * @brief Bloco de Funcao de Interface com Hardware (Hardware Interface Function Block) para geracao de PWM.
- * Adequado aos principios SOLID, atuando de forma desacoplada do motor de eventos.
+ * @brief Hardware Interface Function Block for PWM generation.
+ * Follows SOLID principles, acting decoupled from the event engine.
  */
 #pragma once
 
@@ -11,26 +11,27 @@
 #include "i_function_block.h"
 #include "cJSON.h"
 
-namespace Cefet {
+namespace deiacs {
 
 /**
  * @class PwmOutputBlock
- * @brief Encapsula o periferico LEDC do ESP-IDF para geracao de sinais PWM padronizados.
+ * @brief Encapsulates the ESP-IDF LEDC peripheral for standard PWM signal generation.
  */
 class PwmOutputBlock : public IFunctionBlock {
 public:
     /**
-     * @brief Construtor padrao.
-     * * @param block_id Identificador unico na rede IEC 61499.
-     * @param gpio_num Pino de saida de hardware.
-     * @param timer_num Instancia do timer LEDC associado.
-     * @param channel_num Canal LEDC alocado.
-     * @param freq_hz Frequencia de operacao em Hertz.
+     * @brief Default constructor.
+     * 
+     * @param block_id Unique identifier in the IEC 61499 network.
+     * @param gpio_num Hardware output pin.
+     * @param timer_num Associated LEDC timer instance.
+     * @param channel_num Allocated LEDC channel.
+     * @param freq_hz Operating frequency in Hertz.
      */
     PwmOutputBlock(const std::string& block_id, int gpio_num, ledc_timer_t timer_num, ledc_channel_t channel_num, uint32_t freq_hz);
 
     /**
-     * @brief Destrutor padrao que interrompe o hardware em seguranca.
+     * @brief Default destructor that safely stops the hardware.
      */
     ~PwmOutputBlock() override;
 
@@ -38,16 +39,18 @@ public:
     std::string getId() const override;
     
     /**
-     * @brief Conecta um ponteiro de memoria externa a uma porta de entrada de dados generica.
-     * * @param port_name Nome da porta (ex: "DUTY_CYCLE").
-     * @param data_pointer Ponteiro para a variavel na memoria heap.
-     * @return true se a porta existir e for acoplada com sucesso.
+     * @brief Connects an external memory pointer to a generic data input port.
+     * 
+     * @param port_name Port name (e.g., "DUTY_CYCLE").
+     * @param data_pointer Pointer to the variable in heap memory.
+     * @return true if the port exists and is successfully coupled.
      */
     bool connectDataInput(const std::string& port_name, void* data_pointer) override;
 
     /**
-     * @brief Gatilho polimorfico para execucao baseada em eventos.
-     * * @param event_name Nome do evento de entrada (ex: "REQ").
+     * @brief Polymorphic trigger for event-based execution.
+     * 
+     * @param event_name Input event name (e.g., "REQ").
      */
     void triggerEventInput(const std::string& event_name) override;
 
@@ -62,11 +65,12 @@ private:
     std::vector<float*> m_inputs;
 
     /**
-     * @brief Modifica em baixo nivel a razao ciclica do PWM.
-     * * @param duty_cycle Valor bruto do duty cycle (0-8191 para 13-bit).
-     * @return true em caso de sucesso no barramento.
+     * @brief Low-level modification of the PWM duty cycle.
+     * 
+     * @param duty_cycle Raw duty cycle value (0-8191 for 13-bit).
+     * @return true on bus success.
      */
     bool writePwm(uint32_t duty_cycle);
 };
 
-} // namespace Cefet
+} // namespace deiacs
