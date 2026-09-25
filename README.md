@@ -19,15 +19,14 @@ O **4deiacs** não é um firmware genérico; ele extrai o máximo desempenho do 
 
 1. **Clone o repositório** e entre na pasta do projeto.
 2. **Dependências e Bibliotecas:**
-   O projeto utiliza o *ESP Component Manager* para resolver bibliotecas como MQTT, cJSON e mDNS. Quando baixadas pelo registry, elas vão para a pasta `managed_components/` (e não para a `components/`). Para registrar essas dependências manualmente, execute:
+   O projeto utiliza o *ESP Component Manager* para resolver bibliotecas como Lua, MQTT, cJSON e mDNS. Quando baixadas pelo registry, elas vão para a pasta `managed_components/` (e não para a `components/`). Para registrar essas dependências manualmente, execute:
    ```bash
+   idf.py add-dependency "espressif/lua^5.5.0"
    idf.py add-dependency "espressif/mqtt^1.0.0"
    idf.py add-dependency "espressif/cjson^1.7.19"
    idf.py add-dependency "espressif/mdns^1.11.0"
    ```
    *(Nota: Se o arquivo de manifesto já estiver presente, o `idf.py build` resolve e baixa tudo sozinho).*
-   
-   Já componentes que não vêm do registry (como a implementação local do **Lua**) devem estar presentes fisicamente na pasta `components/lua`.
 3. **Configuração Fundamental (Menuconfig):**
    Abra o terminal e execute `idf.py menuconfig`. Faça as seguintes alterações obrigatórias:
    
