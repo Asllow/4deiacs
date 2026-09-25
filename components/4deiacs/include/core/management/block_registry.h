@@ -48,6 +48,11 @@ public:
      */
     static void clearAll();
 
+    /**
+     * @brief Substitui a malha ativa por uma nova malha, garantindo atomicidade.
+     */
+    static void swapInstances(std::vector<IFunctionBlock*>& new_instances);
+
 private:
     /**
      * @brief Singleton para proteger a ordem de inicializacao do dicionario em C++.

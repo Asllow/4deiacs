@@ -4,8 +4,13 @@
 #include "cefet_events.h"
 #include <cstdarg>
 #include <string>
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
 
 namespace Cefet {
+
+class IFunctionBlock;
 
 /**
  * @brief Motor Principal e Orquestrador do Framework 4deacis.
@@ -60,9 +65,18 @@ public:
      */
     static esp_err_t reloadMesh(const char* json_manifest);
 
+    /**
+     * @brief Enfileira um evento para execucao assincrona na Task do Dispatcher.
+     * Quebra o acoplamento sincrono (depth-first) resolvendo a violacao IEC 61499.
+     */
+    static void enqueueBlockEvent(IFunctionBlock* target, const std::string& port_name);
+
 private:
     static void setupTelemetry();
     static int networkLogRoute(const char* fmt, va_list args);
+
+    static QueueHandle_t s_event_queue;
+    static void dispatcherTask(void* pvParameters);
 };
 
 } // namespace Cefet

@@ -9,7 +9,7 @@ namespace Cefet {
 
 static const char* TAG = "JSON_PARSER";
 
-esp_err_t JsonParser::parseManifest(const char* json_payload)
+esp_err_t JsonParser::parseManifest(const char* json_payload, std::vector<IFunctionBlock*>& out_instances)
 {
     if (json_payload == nullptr) {
         ESP_LOGE(TAG, "Payload nulo fornecido ao parser.");
@@ -23,7 +23,7 @@ esp_err_t JsonParser::parseManifest(const char* json_payload)
         return ESP_FAIL;
     }
 
-    std::vector<IFunctionBlock*> instantiated_blocks;
+    out_instances.clear();
 
     cJSON* blocks_array = cJSON_GetObjectItem(root, "blocks");
     if (cJSON_IsArray(blocks_array)) {
@@ -43,7 +43,7 @@ esp_err_t JsonParser::parseManifest(const char* json_payload)
                 
                 if (new_block != nullptr) {
                     if (new_block->initialize()) {
-                        instantiated_blocks.push_back(new_block);
+                        out_instances.push_back(new_block);
                     } else {
                         ESP_LOGE(TAG, "Falha de inicializacao no bloco [%s]. A abortar instancia.", block_id.c_str());
                         delete new_block;
@@ -58,7 +58,7 @@ esp_err_t JsonParser::parseManifest(const char* json_payload)
     bool wiring_success = false;
     
     if (cJSON_IsArray(conns_array)) {
-        wiring_success = ConnectionManager::wireConnections(conns_array, instantiated_blocks);
+        wiring_success = ConnectionManager::wireConnections(conns_array, out_instances);
     } else {
         ESP_LOGW(TAG, "Nenhuma conexao encontrada no manifesto.");
     }
@@ -66,10 +66,12 @@ esp_err_t JsonParser::parseManifest(const char* json_payload)
 
     if (!wiring_success && cJSON_IsArray(conns_array)) {
         ESP_LOGE(TAG, "Falha critica durante o roteamento. A malha pode estar inconsistente.");
+        for (auto* b : out_instances) { delete b; }
+        out_instances.clear();
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Parsing e Construcao concluidos com sucesso (%d blocos ativos).", instantiated_blocks.size());
+    ESP_LOGI(TAG, "Parsing e Construcao concluidos com sucesso (%d blocos ativos).", out_instances.size());
     return ESP_OK;
 }
 

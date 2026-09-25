@@ -40,7 +40,23 @@ bool SandboxBlock::initialize()
         return false;
     }
 
-    luaL_openlibs(L);
+    // Sandbox Security Fix: Remove luaL_openlibs(L)
+    // luaL_openlibs(L);
+    
+    // Load only safe mathematical and base libraries
+    luaL_requiref(L, "_G", luaopen_base, 1);
+    lua_pop(L, 1);
+    luaL_requiref(L, "math", luaopen_math, 1);
+    lua_pop(L, 1);
+    luaL_requiref(L, "string", luaopen_string, 1);
+    lua_pop(L, 1);
+    luaL_requiref(L, "table", luaopen_table, 1);
+    lua_pop(L, 1);
+
+    // Watchdog hook to prevent infinite loops (e.g., DoS via `while true do end`)
+    lua_sethook(L, [](lua_State* L, lua_Debug* ar) {
+        luaL_error(L, "Runtime Error: Instruction limit exceeded (Infinite Loop Prevention)");
+    }, LUA_MASKCOUNT, 100000);
 
     if (!m_script_b64.empty()) {
         ESP_LOGI(TAG, "[%s] Decodificando script Base64...", m_id.c_str());

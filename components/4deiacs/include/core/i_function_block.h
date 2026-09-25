@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include "4deiacs_node_engine.h"
 
 namespace Cefet {
 
@@ -36,7 +37,7 @@ protected:
         if (it != m_event_routes.end()) {
             for (auto& target : it->second) {
                 if (target.block) {
-                    target.block->triggerEventInput(target.port);
+                    CefetEngine::enqueueBlockEvent(target.block, target.port);
                 }
             }
         }

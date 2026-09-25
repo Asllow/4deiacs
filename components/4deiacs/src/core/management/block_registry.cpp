@@ -31,9 +31,6 @@ IFunctionBlock* BlockRegistry::createBlock(const std::string& block_type, const 
     
     if (it != registry.end()) {
         IFunctionBlock* block = it->second(block_id, config);
-        if (block != nullptr) {
-            getInstances().push_back(block);
-        }
         return block;
     }
     
@@ -50,6 +47,11 @@ void BlockRegistry::clearAll() {
     
     instances.clear();
     ESP_LOGI(TAG, "Todas as instancias de blocos foram destruidas e desalocadas da RAM.");
+}
+
+void BlockRegistry::swapInstances(std::vector<IFunctionBlock*>& new_instances) {
+    clearAll();
+    getInstances() = new_instances;
 }
 
 } // namespace Cefet
