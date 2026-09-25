@@ -72,7 +72,6 @@ bool ConnectionManager::wireConnections(cJSON* conns_array, const std::vector<IF
         }
     }
 
-    // Nota: Nao damos cJSON_Delete aqui, pois o JsonParser e quem limpa a arvore ao final!
     return true;
 }
 

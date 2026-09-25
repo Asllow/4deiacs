@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "src/core/cefet_node_engine.cpp"
+    SRCS "src/core/4deiacs_node_engine.cpp"
         "src/core/network/network_manager.cpp"
         "src/core/network/api_server.cpp"
         "src/core/management/block_registry.cpp"
