@@ -81,3 +81,5 @@ Desktop.ini
 .devcontainer/
 .agents/
 mdCommands/
+
+*.md

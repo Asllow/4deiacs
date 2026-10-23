@@ -21,7 +21,7 @@ public:
     UdpSubscriberBlock(const std::string& block_id, int port);
     virtual ~UdpSubscriberBlock();
 
-    bool initialize();
+    bool initialize() override;
     std::string getId() const override;
 
     void* getDataOutput(const std::string& port_name) override;

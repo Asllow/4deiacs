@@ -20,7 +20,7 @@ public:
     ModbusTcpClientBlock(const std::string& block_id, const std::string& target_ip, int port, int slave_id, int reg_addr);
     virtual ~ModbusTcpClientBlock();
 
-    bool initialize();
+    bool initialize() override;
     std::string getId() const override;
 
     void* getDataOutput(const std::string& port_name) override;
